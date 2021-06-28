@@ -19,14 +19,22 @@ import (
 )
 
 const (
+	// DefaultE2TPort is the default E2T port
 	DefaultE2TPort = 5150
+
+	// DefaultPriority is the default priority value
 	DefaultPriority = 10
+
+	// RcPreRanParamIDForOCN is the ranparam_id used in RC-PRE control message
 	RcPreRanParamIDForOCN = 20
+
+	// RcPreRanParamNameForOCN is the ranparam_name used in RC-PRE control message
 	RcPreRanParamNameForOCN = "ocn_rc"
 )
 
 var log = logging.GetLogger("southbound", "e2control")
 
+// NewHandler generates the new handler of this e2control session handler
 func NewHandler(smName string, smVersion string, appID string, e2tEndpoint string) Handler {
 	var e2tPort int
 	e2tHost := strings.Split(e2tEndpoint, ":")[0]
@@ -44,13 +52,14 @@ func NewHandler(smName string, smVersion string, appID string, e2tEndpoint strin
 	}
 }
 
+// Handler includes all functions of E2 control handler
 type Handler interface {
+	// SendControlMessage sends a control message to E2Node
 	SendControlMessage(ctx context.Context, ids storage.IDs, nodeID string, offset int32) error
 }
 
 type handler struct {
 	e2client e2client.Client
-
 }
 
 func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeID string, offset int32) error {
@@ -65,7 +74,7 @@ func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeI
 
 	node := h.e2client.Node(e2client.NodeID(nodeID))
 	outcome, err := node.Control(ctx, &e2api.ControlMessage{
-		Header: header,
+		Header:  header,
 		Payload: payload,
 	})
 	if err != nil {
@@ -94,7 +103,7 @@ func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte
 				NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
 					Value: &e2sm_rc_pre_v2.BitString{
 						Value: cidDec,
-						Len: 36,
+						Len:   36,
 					},
 				},
 			},

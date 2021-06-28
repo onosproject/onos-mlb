@@ -35,15 +35,15 @@ func main() {
 	log.Info("Starting onos-mlb")
 
 	appConfParams := manager.AppParameters{
-		CAPath: *caPath,
-		KeyPath: *keyPath,
-		CertPath: *certPath,
-		ConfigPath: *configPath,
-		E2tEndpoint: *e2tEndpoint,
-		UENIBEndpoint: *uenibEndpoint,
-		GRPCPort: *grpcPort,
-		RicActionID: int32(*ricActionID),
-		OverloadThreshold: *overloadThreshold,
+		CAPath:              *caPath,
+		KeyPath:             *keyPath,
+		CertPath:            *certPath,
+		ConfigPath:          *configPath,
+		E2tEndpoint:         *e2tEndpoint,
+		UENIBEndpoint:       *uenibEndpoint,
+		GRPCPort:            *grpcPort,
+		RicActionID:         int32(*ricActionID),
+		OverloadThreshold:   *overloadThreshold,
 		TargetLoadThreshold: *targetLoadThreshold,
 	}
 

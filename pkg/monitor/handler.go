@@ -17,26 +17,29 @@ import (
 
 var log = logging.GetLogger("monitor")
 
+// NewHandler generates monitoring handler
 func NewHandler(rnibHandler rnib.Handler, uenibHandler uenib.Handler, numUEsMeasStore storage.Store, neighborMeasStore storage.Store, ocnStore storage.Store) Handler {
 	return &handler{
-		rnibHandler: rnibHandler,
-		uenibHandler: uenibHandler,
-		numUEsMeasStore: numUEsMeasStore,
+		rnibHandler:       rnibHandler,
+		uenibHandler:      uenibHandler,
+		numUEsMeasStore:   numUEsMeasStore,
 		neighborMeasStore: neighborMeasStore,
-		ocnStore: ocnStore,
+		ocnStore:          ocnStore,
 	}
 }
 
+// Handler is an interface including this handler's functions
 type Handler interface {
+	// Monitor starts to monitor UENIB and RNIB
 	Monitor(ctx context.Context) error
 }
 
 type handler struct {
-	rnibHandler rnib.Handler
-	uenibHandler uenib.Handler
-	numUEsMeasStore storage.Store
+	rnibHandler       rnib.Handler
+	uenibHandler      uenib.Handler
+	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	ocnStore storage.Store
+	ocnStore          storage.Store
 }
 
 func (h *handler) Monitor(ctx context.Context) error {
@@ -66,6 +69,9 @@ func (h *handler) Monitor(ctx context.Context) error {
 	// it is essential since uenib from kpimon and uenib from pci use different key
 	// the uenib from kpimon uses node id and coi as a key, whereas that from pci uses node id, cell id, and plmn id as a key
 	monResults, err := h.fillKeys(rnibList, uenibList, plmnid)
+	if err != nil {
+		return err
+	}
 
 	// store monitoring result to each key
 	h.storeUENIB(ctx, monResults)
@@ -73,7 +79,7 @@ func (h *handler) Monitor(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) plmnidVerification(uenibList []uenib.UENIBElement) (string, error) {
+func (h *handler) plmnidVerification(uenibList []uenib.Element) (string, error) {
 	var plmnid string
 	for _, elem := range uenibList {
 		if elem.Key.Aspect == uenib.AspectKeyNeighbors {
@@ -91,8 +97,8 @@ func (h *handler) plmnidVerification(uenibList []uenib.UENIBElement) (string, er
 	return plmnid, nil
 }
 
-func (h *handler) fillKeys(rnibList []rnib.RNIBIDs, uenibList []uenib.UENIBElement, plmnid string) ([]uenib.UENIBElement, error) {
-	results := make([]uenib.UENIBElement, 0)
+func (h *handler) fillKeys(rnibList []rnib.IDs, uenibList []uenib.Element, plmnid string) ([]uenib.Element, error) {
+	results := make([]uenib.Element, 0)
 	for _, elem := range uenibList {
 		switch elem.Key.Aspect {
 		case uenib.AspectKeyNeighbors:
@@ -117,7 +123,7 @@ func (h *handler) fillKeys(rnibList []rnib.RNIBIDs, uenibList []uenib.UENIBEleme
 	return results, nil
 }
 
-func (h *handler) getCOI(nodeID string, cid string, rnibList []rnib.RNIBIDs) (string, error) {
+func (h *handler) getCOI(nodeID string, cid string, rnibList []rnib.IDs) (string, error) {
 	for _, ids := range rnibList {
 		if ids.CID == cid && ids.NodeID == nodeID {
 			return ids.COI, nil
@@ -126,7 +132,7 @@ func (h *handler) getCOI(nodeID string, cid string, rnibList []rnib.RNIBIDs) (st
 	return "", errors.NewNotFound("could not search cell object id with CID and nodeID in rnib list")
 }
 
-func (h *handler) getCID(nodeID string, coi string, rnibList []rnib.RNIBIDs) (string, error) {
+func (h *handler) getCID(nodeID string, coi string, rnibList []rnib.IDs) (string, error) {
 	for _, ids := range rnibList {
 		if ids.COI == coi && ids.NodeID == nodeID {
 			return ids.CID, nil
@@ -135,12 +141,12 @@ func (h *handler) getCID(nodeID string, coi string, rnibList []rnib.RNIBIDs) (st
 	return "", errors.NewNotFound("could not search CID with cell object ID and nodeID in rnib list")
 }
 
-func (h *handler) storeUENIB(ctx context.Context, uenibList []uenib.UENIBElement) {
+func (h *handler) storeUENIB(ctx context.Context, uenibList []uenib.Element) {
 	for _, u := range uenibList {
 		key := storage.IDs{
-			NodeID: u.Key.NodeID,
-			PlmnID: u.Key.PlmnID,
-			CellID: u.Key.CID,
+			NodeID:    u.Key.NodeID,
+			PlmnID:    u.Key.PlmnID,
+			CellID:    u.Key.CID,
 			CellObjID: u.Key.COI,
 		}
 		switch u.Key.Aspect {

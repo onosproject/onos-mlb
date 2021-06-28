@@ -18,19 +18,21 @@ import (
 
 var log = logging.GetLogger("manager")
 
+// AppParameters includes all application parameters coming from arguments when starting this app
 type AppParameters struct {
 	CAPath              string
 	KeyPath             string
 	CertPath            string
 	ConfigPath          string
 	E2tEndpoint         string
-	UENIBEndpoint	    string
+	UENIBEndpoint       string
 	GRPCPort            int
 	RicActionID         int32
 	OverloadThreshold   int
 	TargetLoadThreshold int
 }
 
+// NewManager generates this application's manager
 func NewManager(parameters AppParameters) *Manager {
 	appCfg, err := config.NewConfig(parameters.ConfigPath)
 	if err != nil {
@@ -64,58 +66,59 @@ func NewManager(parameters AppParameters) *Manager {
 
 	return &Manager{
 		handlers: handlers{
-			rnibHandler: rnibHandler,
-			uenibHandler: uenibHandler,
-			monitorHandler: monitorHandler,
-			e2ControlHandler: e2ControlHandler,
+			rnibHandler:       rnibHandler,
+			uenibHandler:      uenibHandler,
+			monitorHandler:    monitorHandler,
+			e2ControlHandler:  e2ControlHandler,
 			controllerHandler: ctrlHandler,
 		},
 		stores: stores{
-			numUEsMeasStore: numUEsMeasStore,
+			numUEsMeasStore:   numUEsMeasStore,
 			neighborMeasStore: neighborMeasStore,
-			statisticsStore: statisticsStore,
-			ocnStore: ocnStore,
+			statisticsStore:   statisticsStore,
+			ocnStore:          ocnStore,
 		},
 		channels: channels{},
 		configs: configs{
 			appConfigParams: parameters,
-			appConfig: appCfg,
+			appConfig:       appCfg,
 		},
 	}
 }
 
+// Manager is a struct including this app's manager information and objects
 type Manager struct {
 	handlers handlers
-	stores stores
+	stores   stores
 	channels channels
-	configs configs
+	configs  configs
 }
 
 type handlers struct {
-	rnibHandler rnib.Handler
-	uenibHandler uenib.Handler
-	monitorHandler monitor.Handler
-	e2ControlHandler e2control.Handler
+	rnibHandler       rnib.Handler
+	uenibHandler      uenib.Handler
+	monitorHandler    monitor.Handler
+	e2ControlHandler  e2control.Handler
 	controllerHandler controller.Handler
 }
 
 type stores struct {
-	numUEsMeasStore storage.Store
+	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	statisticsStore storage.Store
-	ocnStore storage.Store
+	statisticsStore   storage.Store
+	ocnStore          storage.Store
 }
 
 type channels struct {
-
 }
 
 type configs struct {
 	appConfigParams AppParameters
-	appConfig config.Config
+	appConfig       config.Config
 }
 
+// Start starts this app's manager
 func (m *Manager) Start() error {
-	m.handlers.controllerHandler.Run(context.Background())
-	return nil
+	err := m.handlers.controllerHandler.Run(context.Background())
+	return err
 }

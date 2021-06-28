@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// ParseUENIBNeighborAspectKey parses neighbor aspect key in UENIB
 func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, error) {
 	objects := strings.Split(string(key), ":")
 	if len(objects) != 4 {
@@ -34,6 +35,7 @@ func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, 
 	return nodeID, plmnID, cid, ecgiType, nil
 }
 
+// ParseUENIBNumUEsAspectKey parses the number of UEs aspect key in UENIB
 func ParseUENIBNumUEsAspectKey(key uenib.ID) (string, string, error) {
 	objects := strings.Split(string(key), ":")
 	if len(objects) != 2 {

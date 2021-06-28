@@ -4,8 +4,9 @@
 
 package rnib
 
-type RNIBIDs struct {
+// IDs is an ID of RNIB
+type IDs struct {
 	NodeID string
-	CID string
-	COI string
+	CID    string
+	COI    string
 }

@@ -18,10 +18,14 @@ import (
 var log = logging.GetLogger("controller")
 
 const (
+	// RcPreRanParamDefaultOCN is default Ocn value
 	RcPreRanParamDefaultOCN = meastype.QOffset0dB
+
+	// OCNDeltaFactor is the value how many inc/dec Ocn
 	OCNDeltaFactor = 3
 )
 
+// NewHandler generates new MLB controller handler
 func NewHandler(interval int, e2controlHandler e2control.Handler,
 	monitorHandler monitor.Handler,
 	numUEsMeasStore storage.Store,
@@ -31,46 +35,48 @@ func NewHandler(interval int, e2controlHandler e2control.Handler,
 	overloadThreshold int,
 	targetThreshold int) Handler {
 	return &handler{
-		e2controlHandler: e2controlHandler,
-		monitorHandler: monitorHandler,
-		numUEsMeasStore: numUEsMeasStore,
+		e2controlHandler:  e2controlHandler,
+		monitorHandler:    monitorHandler,
+		numUEsMeasStore:   numUEsMeasStore,
 		neighborMeasStore: neighborMeasStore,
-		statisticsStore: statisticsStore,
-		ocnStore: ocnStore,
-		interval: interval,
+		statisticsStore:   statisticsStore,
+		ocnStore:          ocnStore,
+		interval:          interval,
 	}
 }
 
+// Handler is an interface including MLB controller
 type Handler interface {
+	// Run runs MLB controller
 	Run(ctx context.Context) error
 }
 
 type handler struct {
-	e2controlHandler e2control.Handler
-	monitorHandler monitor.Handler
-	numUEsMeasStore storage.Store
+	e2controlHandler  e2control.Handler
+	monitorHandler    monitor.Handler
+	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	statisticsStore storage.Store
-	ocnStore storage.Store
+	statisticsStore   storage.Store
+	ocnStore          storage.Store
 
-	interval int
+	interval          int
 	overloadThreshold int
-	targetThreshold int
+	targetThreshold   int
 }
 
 func (h *handler) Run(ctx context.Context) error {
 	for {
 		select {
-		case <- time.After(time.Duration(h.interval) * time.Second):
+		case <-time.After(time.Duration(h.interval) * time.Second):
 			// ToDo should run as goroutine
-			h.StartControlLogic(ctx)
-		case <- ctx.Done():
+			h.startControlLogic(ctx)
+		case <-ctx.Done():
 			return nil
 		}
 	}
 }
 
-func (h *handler) StartControlLogic(ctx context.Context) {
+func (h *handler) startControlLogic(ctx context.Context) {
 	// run monitor handler
 	err := h.monitorHandler.Monitor(ctx)
 	if err != nil {
@@ -211,7 +217,7 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 		return err
 	}
 	capSCell := h.getCapacity(1, totalNumUEs, numUEsSCell)
-	if 1 - capSCell < h.targetThreshold {
+	if 1-capSCell < h.targetThreshold {
 		// send control message to reduce OCn for all neighbors
 		for _, nCellID := range neighborList {
 			entry, err := h.ocnStore.Get(ctx, ids)
@@ -219,7 +225,7 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 				return err
 			}
 			ocn := entry.Value.(storage.OcnMap).Value[nCellID]
-			if ocn - OCNDeltaFactor < meastype.QOffsetMinus24dB {
+			if ocn-OCNDeltaFactor < meastype.QOffsetMinus24dB {
 				ocn = meastype.QOffsetMinus24dB
 			} else {
 				ocn = ocn - OCNDeltaFactor
@@ -235,20 +241,20 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 
 	// if sCell load > overload threshold && nCell < target load threshold
 	// increase Ocn
-	if 1 - capSCell > h.overloadThreshold {
+	if 1-capSCell > h.overloadThreshold {
 		for _, nCellID := range neighborList {
 			numUEsNCell, err := h.numUE(ctx, nCellID.PlmnID, nCellID.CellID, cells)
 			if err != nil {
 				log.Warnf("there is no num(UEs) measurement value; this neighbor (plmnid-%v:cid-%v) may not be controlled by this xAPP; set num(UEs) to 0", nCellID.PlmnID, nCellID.CellID)
 			}
 			capNCell := h.getCapacity(1, totalNumUEs, numUEsNCell)
-			if 1 - capNCell < h.targetThreshold {
+			if 1-capNCell < h.targetThreshold {
 				entry, err := h.ocnStore.Get(ctx, ids)
 				if err != nil {
 					return err
 				}
 				ocn := entry.Value.(storage.OcnMap).Value[nCellID]
-				if ocn + OCNDeltaFactor > meastype.QOffsetMinus24dB {
+				if ocn+OCNDeltaFactor > meastype.QOffsetMinus24dB {
 					ocn = meastype.QOffset24dB
 				} else {
 					ocn = ocn + OCNDeltaFactor
@@ -266,7 +272,7 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 }
 
 func (h *handler) getCapacity(denominationFactor float64, totalNumUEs int, numUEs int) int {
-	capacity := (1 - float64(numUEs) / (denominationFactor * float64(totalNumUEs))) * 100
+	capacity := (1 - float64(numUEs)/(denominationFactor*float64(totalNumUEs))) * 100
 	return int(capacity)
 }
 

@@ -18,35 +18,45 @@ var log = logging.GetLogger("store", "storage")
 
 var _ Store = &store{} // to check interface and struct in compile time (static check)
 
+// NewStore generates the new store
 func NewStore() Store {
 	watchers := watcher.NewWatchers()
 	return &store{
-		storage: make(map[IDs]*Entry),
+		storage:  make(map[IDs]*Entry),
 		watchers: watchers,
 	}
 }
 
+// Store has all functions in this store
 type Store interface {
+	// Put puts key and its value
 	Put(ctx context.Context, key IDs, value interface{}) (*Entry, error)
 
+	// Get gets the element with key
 	Get(ctx context.Context, key IDs) (*Entry, error)
 
+	// ListElements gets all elements in this store
 	ListElements(ctx context.Context, ch chan<- *Entry) error
 
+	// ListKeys gets all keys in this store
 	ListKeys(ctx context.Context, ch chan<- IDs) error
 
+	// Update updates an element
 	Update(ctx context.Context, entry *Entry) error
 
+	// Delete deletes an element
 	Delete(ctx context.Context, key IDs) error
 
+	// Watch watches the event of this store
 	Watch(ctx context.Context, ch chan<- event.Event) error
 
+	// Print prints the map in this store for debugging
 	Print()
 }
 
 type store struct {
-	storage map[IDs]*Entry
-	mu sync.RWMutex
+	storage  map[IDs]*Entry
+	mu       sync.RWMutex
 	watchers *watcher.Watchers
 }
 
@@ -54,14 +64,14 @@ func (s *store) Put(ctx context.Context, key IDs, value interface{}) (*Entry, er
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	entry := &Entry{
-		Key: key,
+		Key:   key,
 		Value: value,
 	}
 	s.storage[key] = entry
 	s.watchers.Send(event.Event{
-		Key: key,
+		Key:   key,
 		Value: entry,
-		Type: Created,
+		Type:  Created,
 	})
 	return entry, nil
 }
@@ -109,9 +119,9 @@ func (s *store) Update(ctx context.Context, entry *Entry) error {
 	if _, ok := s.storage[entry.Key]; ok {
 		s.storage[entry.Key] = entry
 		s.watchers.Send(event.Event{
-			Key: entry.Key,
+			Key:   entry.Key,
 			Value: entry,
-			Type: Updated,
+			Type:  Updated,
 		})
 	}
 

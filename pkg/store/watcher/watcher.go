@@ -10,18 +10,22 @@ import (
 	"sync"
 )
 
+// EventChannel is the channel to report event happening
 type EventChannel chan event.Event
 
+// Watchers is the struct including all watchers
 type Watchers struct {
 	watchers map[uuid.UUID]Watcher
-	rm sync.RWMutex
+	rm       sync.RWMutex
 }
 
+// Watcher is the struct including a watcher
 type Watcher struct {
 	id uuid.UUID
 	ch chan<- event.Event
 }
 
+// NewWatchers generates Watchers
 func NewWatchers() *Watchers {
 	return &Watchers{
 		watchers: make(map[uuid.UUID]Watcher),

@@ -5,9 +5,18 @@
 package manager
 
 const (
+	// RcPreServiceModelName is RC-PRE service model name
 	RcPreServiceModelName = "oran-e2sm-rc-pre"
+
+	// RcPreServiceModelVersion is RC-PRE service model version
 	RcPreServiceModelVersion = "v2"
+
+	// AppID is an ID of this map used in RC-PRE message
 	AppID = "onos-mlb"
+
+	// MLBAppIntervalPath is the path to get MLB controller interval
 	MLBAppIntervalPath = "/controller/interval"
+
+	// MLBAppDefaultInterval is the default value of MLB controller interval
 	MLBAppDefaultInterval = 10
 )

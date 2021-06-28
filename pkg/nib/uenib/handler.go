@@ -16,13 +16,19 @@ import (
 )
 
 const (
+	// AspectKeyNeighbors is the UENIB aspect key of neighbors
 	AspectKeyNeighbors = "neighbors"
+
+	// AspectKeyNumUEsRANSim is the UENIB aspect key of the number of UEs for RAN-Simulator
 	AspectKeyNumUEsRANSim = "RRC.Conn.Avg"
+
+	// AspectKeyNumUEsOAI is the UENIB aspect key of the number of UEs for OAI
 	AspectKeyNumUEsOAI = "RRC.ConnMean"
 )
 
 var log = logging.GetLogger("uenib")
 
+// NewHandler generates the new UENIB handler
 func NewHandler(uenibAddr string, certPath string, keyPath string) (Handler, error) {
 	dialOpt, err := grpcutils.NewDialOptForRetry(certPath, keyPath)
 	if err != nil {
@@ -37,15 +43,17 @@ func NewHandler(uenibAddr string, certPath string, keyPath string) (Handler, err
 	}, nil
 }
 
+// Handler includes all UENIB handler's functions
 type Handler interface {
-	Get(ctx context.Context) ([]UENIBElement, error)
+	// Get gets all UENIB
+	Get(ctx context.Context) ([]Element, error)
 }
 
 type handler struct {
-	uenibClient  uenib.UEServiceClient
+	uenibClient uenib.UEServiceClient
 }
 
-func (h *handler) Get(ctx context.Context) ([]UENIBElement, error) {
+func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	req := &uenib.ListUERequest{
 		AspectTypes: []string{AspectKeyNeighbors, AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI},
 	}
@@ -54,7 +62,7 @@ func (h *handler) Get(ctx context.Context) ([]UENIBElement, error) {
 		return nil, err
 	}
 
-	results := make([]UENIBElement, 0)
+	results := make([]Element, 0)
 	for {
 		object, err := resp.Recv()
 		if err == io.EOF {
@@ -67,47 +75,47 @@ func (h *handler) Get(ctx context.Context) ([]UENIBElement, error) {
 		aspects := uenib.GetAspects()
 		uenibID := uenib.GetID()
 		for k, v := range aspects {
-			uenibKey, err := h.createUENIBKey(uenibID, k)
+			uenibKey, err := h.createKey(uenibID, k)
 			if err != nil {
 				return nil, err
 			}
-			results = append(results, UENIBElement{
-				Key: uenibKey,
+			results = append(results, Element{
+				Key:   uenibKey,
 				Value: string(v.Value),
 			})
 		}
 	}
 
+	log.Debugf("Received UENIB: %v", results)
 	return results, nil
 }
 
-func (h *handler) createUENIBKey(uenibID uenib.ID, aspect string) (UENIBKey, error) {
+func (h *handler) createKey(uenibID uenib.ID, aspect string) (Key, error) {
 	switch aspect {
 	case AspectKeyNeighbors:
 		// it has nodeid, plmnid, cid, and cgi type
 		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(uenibID)
 		if err != nil {
-			return UENIBKey{}, err
+			return Key{}, err
 		}
-		return UENIBKey{
+		return Key{
 			NodeID: nodeID,
 			PlmnID: plmnID,
-			CID: cid,
+			CID:    cid,
 			Aspect: aspect,
 		}, nil
 	case AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI:
 		// it has nodeid and coi
 		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(uenibID)
 		if err != nil {
-			return UENIBKey{}, err
+			return Key{}, err
 		}
-		return UENIBKey{
+		return Key{
 			NodeID: nodeID,
-			COI: coi,
+			COI:    coi,
 			Aspect: aspect,
 		}, nil
 	default:
-		return UENIBKey{}, errors.NewNotSupported("unavailable aspects for this app")
+		return Key{}, errors.NewNotSupported("unavailable aspects for this app")
 	}
 }
-

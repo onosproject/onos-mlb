@@ -10,8 +10,7 @@ import (
 	"strconv"
 )
 
-const MaxPlmnIDDec = 1<<24 - 1
-
+// DecodePlmnIDDecStrToBytes decodes the PLMNID string type to bytes type
 func DecodePlmnIDDecStrToBytes(plmnidDecStr string) ([]byte, error) {
 	var plmnBytes [3]uint8
 	n, err := strconv.ParseUint(plmnidDecStr, 10, 32)
@@ -31,6 +30,7 @@ func DecodePlmnIDDecStrToBytes(plmnidDecStr string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// DecodeCIDDecStrToUint64 decodes the CID string type to bytes type
 func DecodeCIDDecStrToUint64(cidDecStr string) (uint64, error) {
 	cid, err := strconv.ParseUint(cidDecStr, 10, 64)
 	if err != nil {

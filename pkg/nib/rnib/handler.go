@@ -11,10 +11,9 @@ import (
 	"github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
 
-const CellEntityKind = "e2cell"
-
 var log = logging.GetLogger("rnib")
 
+// NewHandler generates the new RNIB handler
 func NewHandler() (Handler, error) {
 	rnibClient, err := topo.NewClient()
 	if err != nil {
@@ -25,9 +24,15 @@ func NewHandler() (Handler, error) {
 	}, nil
 }
 
+// Handler includes RNIB handler's all functions
 type Handler interface {
-	Get(ctx context.Context) ([]RNIBIDs, error)
-	E2NodeIDs(ctx context.Context) ([]topoapi.ID, error)
+	// Get gets all RNIB
+	Get(ctx context.Context) ([]IDs, error)
+
+	// GetE2NodeIDs gets all E2 Node IDs
+	GetE2NodeIDs(ctx context.Context) ([]topoapi.ID, error)
+
+	// GetE2Cells gets all cells managed by all E2 nodes
 	GetE2Cells(ctx context.Context, nodeID topoapi.ID) ([]topoapi.E2Cell, error)
 }
 
@@ -35,30 +40,31 @@ type handler struct {
 	rnibClient topo.Client
 }
 
-func (h *handler) Get(ctx context.Context) ([]RNIBIDs, error) {
-	nodeIDs, err := h.E2NodeIDs(ctx)
+func (h *handler) Get(ctx context.Context) ([]IDs, error) {
+	nodeIDs, err := h.GetE2NodeIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ids := make([]RNIBIDs, 0)
+	ids := make([]IDs, 0)
 	for _, nodeID := range nodeIDs {
 		e2Cells, err := h.GetE2Cells(ctx, nodeID)
 		if err != nil {
 			return nil, err
 		}
 		for _, cell := range e2Cells {
-			ids = append(ids, RNIBIDs{
+			ids = append(ids, IDs{
 				NodeID: string(nodeID),
-				COI: cell.CellObjectID,
-				CID: cell.CellGlobalID.GetValue(),
+				COI:    cell.CellObjectID,
+				CID:    cell.CellGlobalID.GetValue(),
 			})
 		}
 	}
+	log.Debugf("Received RNIB: %v", ids)
 	return ids, nil
 }
 
-func (h *handler) E2NodeIDs(ctx context.Context) ([]topoapi.ID, error) {
+func (h *handler) GetE2NodeIDs(ctx context.Context) ([]topoapi.ID, error) {
 	objects, err := h.rnibClient.List(ctx, topo.WithListFilters(getControlRelationFilter()))
 	if err != nil {
 		return nil, err

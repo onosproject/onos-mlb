@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// NewDialOptForRetry generates dial options for gRPC connection to set retry policy
 func NewDialOptForRetry(certPath string, keyPath string) ([]grpc.DialOption, error) {
 	dialOpts := []grpc.DialOption{
 		grpc.WithStreamInterceptor(southbound.RetryingStreamClientInterceptor(100 * time.Millisecond)),
