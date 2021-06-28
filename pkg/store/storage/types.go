@@ -35,10 +35,6 @@ type Measurement struct {
 	Value int
 }
 
-type Neighbors struct {
-	Value []IDs
-}
-
 type OcnMap struct {
 	Value map[IDs]meastype.QOffsetRange
 }

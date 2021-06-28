@@ -27,7 +27,9 @@ func NewHandler(interval int, e2controlHandler e2control.Handler,
 	numUEsMeasStore storage.Store,
 	neighborMeasStore storage.Store,
 	statisticsStore storage.Store,
-	ocnStore storage.Store) Handler {
+	ocnStore storage.Store,
+	overloadThreshold int,
+	targetThreshold int) Handler {
 	return &handler{
 		e2controlHandler: e2controlHandler,
 		monitorHandler: monitorHandler,
@@ -35,11 +37,12 @@ func NewHandler(interval int, e2controlHandler e2control.Handler,
 		neighborMeasStore: neighborMeasStore,
 		statisticsStore: statisticsStore,
 		ocnStore: ocnStore,
+		interval: interval,
 	}
 }
 
 type Handler interface {
-
+	Run(ctx context.Context) error
 }
 
 type handler struct {
@@ -108,14 +111,17 @@ func (h *handler) StartControlLogic(ctx context.Context) {
 
 func (h *handler) updateOcnStore(ctx context.Context) error {
 	ch := make(chan *storage.Entry)
-	err := h.neighborMeasStore.ListElements(ctx, ch)
-	if err != nil {
-		return err
-	}
+	go func(ch chan *storage.Entry) {
+		err := h.neighborMeasStore.ListElements(ctx, ch)
+		if err != nil {
+			log.Error(err)
+			close(ch)
+		}
+	}(ch)
 
 	for e := range ch {
 		ids := e.Key
-		neighborList := e.Value.(storage.Neighbors).Value
+		neighborList := e.Value.([]storage.IDs)
 
 		if e, err := h.ocnStore.Get(ctx, ids); err != nil {
 			// the new cells connected
@@ -161,12 +167,15 @@ func (h *handler) containsIDs(ids storage.IDs, idsList []storage.IDs) bool {
 func (h *handler) getTotalNumUEs(ctx context.Context) (int, error) {
 	result := 0
 	ch := make(chan *storage.Entry)
-	err := h.numUEsMeasStore.ListElements(ctx, ch)
-	if err != nil {
-		return result, err
-	}
+	go func(ch chan *storage.Entry) {
+		err := h.numUEsMeasStore.ListElements(ctx, ch)
+		if err != nil {
+			log.Error(err)
+			close(ch)
+		}
+	}(ch)
 	for e := range ch {
-		result += e.Value.(int)
+		result += e.Value.(storage.Measurement).Value
 	}
 	return result, nil
 }
@@ -174,10 +183,13 @@ func (h *handler) getTotalNumUEs(ctx context.Context) (int, error) {
 func (h *handler) getCellList(ctx context.Context) ([]storage.IDs, error) {
 	result := make([]storage.IDs, 0)
 	ch := make(chan storage.IDs)
-	err := h.numUEsMeasStore.ListKeys(ctx, ch)
-	if err != nil {
-		return result, err
-	}
+	go func(chan storage.IDs) {
+		err := h.numUEsMeasStore.ListKeys(ctx, ch)
+		if err != nil {
+			log.Error(err)
+			close(ch)
+		}
+	}(ch)
 	for k := range ch {
 		result = append(result, k)
 	}
@@ -213,7 +225,11 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 				ocn = ocn - OCNDeltaFactor
 			}
 
-			h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
+			err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
+			if err != nil {
+				return err
+			}
+			entry.Value.(storage.OcnMap).Value[nCellID] = ocn
 		}
 	}
 
@@ -237,7 +253,11 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 				} else {
 					ocn = ocn + OCNDeltaFactor
 				}
-				h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
+				err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
+				if err != nil {
+					return err
+				}
+				entry.Value.(storage.OcnMap).Value[nCellID] = ocn
 			}
 		}
 	}
@@ -260,7 +280,7 @@ func (h *handler) numUE(ctx context.Context, plmnID string, cid string, cells []
 	if err != nil {
 		return 0, err
 	}
-	return entry.Value.(int), nil
+	return entry.Value.(storage.Measurement).Value, nil
 }
 
 func (h *handler) findIDWithCGI(plmnid string, cid string, cells []storage.IDs) (storage.IDs, error) {

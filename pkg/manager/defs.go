@@ -8,4 +8,6 @@ const (
 	RcPreServiceModelName = "oran-e2sm-rc-pre"
 	RcPreServiceModelVersion = "v2"
 	AppID = "onos-mlb"
+	MLBAppIntervalPath = "/controller/interval"
+	MLBAppDefaultInterval = 10
 )

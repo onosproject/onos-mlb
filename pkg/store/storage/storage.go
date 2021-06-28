@@ -40,6 +40,8 @@ type Store interface {
 	Delete(ctx context.Context, key IDs) error
 
 	Watch(ctx context.Context, ch chan<- event.Event) error
+
+	Print()
 }
 
 type store struct {
@@ -140,4 +142,12 @@ func (s *store) Watch(ctx context.Context, ch chan<- event.Event) error {
 		close(ch)
 	}()
 	return nil
+}
+
+func (s *store) Print() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k, v := range s.storage {
+		log.Debugf("key - %v / value - %v", k, v)
+	}
 }

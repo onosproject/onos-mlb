@@ -5,8 +5,10 @@
 package manager
 
 import (
+	"context"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/config"
+	"github.com/onosproject/onos-mlb/pkg/controller"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	"github.com/onosproject/onos-mlb/pkg/nib/uenib"
@@ -30,9 +32,14 @@ type AppParameters struct {
 }
 
 func NewManager(parameters AppParameters) *Manager {
-	appCfg, err := config.NewAppConfig(parameters.ConfigPath)
+	appCfg, err := config.NewConfig(parameters.ConfigPath)
 	if err != nil {
 		log.Warn(err)
+	}
+	interval, err := appCfg.GetInterval(MLBAppIntervalPath)
+	if err != nil {
+		log.Warn("set interval to default interval - reason: %v", err)
+		interval = MLBAppDefaultInterval
 	}
 
 	numUEsMeasStore := storage.NewStore()
@@ -53,12 +60,15 @@ func NewManager(parameters AppParameters) *Manager {
 	e2ControlHandler := e2control.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion,
 		AppID, parameters.E2tEndpoint)
 
+	ctrlHandler := controller.NewHandler(interval, e2ControlHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, statisticsStore, ocnStore, parameters.OverloadThreshold, parameters.TargetLoadThreshold)
+
 	return &Manager{
 		handlers: handlers{
 			rnibHandler: rnibHandler,
 			uenibHandler: uenibHandler,
 			monitorHandler: monitorHandler,
 			e2ControlHandler: e2ControlHandler,
+			controllerHandler: ctrlHandler,
 		},
 		stores: stores{
 			numUEsMeasStore: numUEsMeasStore,
@@ -86,6 +96,7 @@ type handlers struct {
 	uenibHandler uenib.Handler
 	monitorHandler monitor.Handler
 	e2ControlHandler e2control.Handler
+	controllerHandler controller.Handler
 }
 
 type stores struct {
@@ -105,5 +116,6 @@ type configs struct {
 }
 
 func (m *Manager) Start() error {
+	m.handlers.controllerHandler.Run(context.Background())
 	return nil
 }
