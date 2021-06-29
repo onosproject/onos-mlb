@@ -4,8 +4,6 @@
 
 package storage
 
-import "github.com/onosproject/rrm-son-lib/pkg/model/measurement/type"
-
 // IDs is a key of this store element
 type IDs struct {
 	NodeID    string
@@ -44,11 +42,6 @@ func (e storageEvent) String() string {
 // Measurement is the struct to store measurement results
 type Measurement struct {
 	Value int
-}
-
-// OcnMap is the struct to store Ocn values
-type OcnMap struct {
-	Value map[IDs]meastype.QOffsetRange
 }
 
 // Statistics is the struct to store statistics

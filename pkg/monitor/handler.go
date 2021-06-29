@@ -10,6 +10,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	"github.com/onosproject/onos-mlb/pkg/nib/uenib"
+	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ import (
 var log = logging.GetLogger("monitor")
 
 // NewHandler generates monitoring handler
-func NewHandler(rnibHandler rnib.Handler, uenibHandler uenib.Handler, numUEsMeasStore storage.Store, neighborMeasStore storage.Store, ocnStore storage.Store) Handler {
+func NewHandler(rnibHandler rnib.Handler, uenibHandler uenib.Handler, numUEsMeasStore storage.Store, neighborMeasStore storage.Store, ocnStore ocnstorage.Store) Handler {
 	return &handler{
 		rnibHandler:       rnibHandler,
 		uenibHandler:      uenibHandler,
@@ -39,7 +40,7 @@ type handler struct {
 	uenibHandler      uenib.Handler
 	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	ocnStore          storage.Store
+	ocnStore          ocnstorage.Store
 }
 
 func (h *handler) Monitor(ctx context.Context) error {

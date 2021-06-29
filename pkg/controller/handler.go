@@ -10,6 +10,8 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	"github.com/onosproject/onos-mlb/pkg/southbound/e2control"
+	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
+	paramstorage "github.com/onosproject/onos-mlb/pkg/store/parameters"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 	meastype "github.com/onosproject/rrm-son-lib/pkg/model/measurement/type"
 	"time"
@@ -20,28 +22,22 @@ var log = logging.GetLogger("controller")
 const (
 	// RcPreRanParamDefaultOCN is default Ocn value
 	RcPreRanParamDefaultOCN = meastype.QOffset0dB
-
-	// OCNDeltaFactor is the value how many inc/dec Ocn
-	OCNDeltaFactor = 3
 )
 
 // NewHandler generates new MLB controller handler
-func NewHandler(interval int, e2controlHandler e2control.Handler,
+func NewHandler(e2controlHandler e2control.Handler,
 	monitorHandler monitor.Handler,
 	numUEsMeasStore storage.Store,
 	neighborMeasStore storage.Store,
-	statisticsStore storage.Store,
-	ocnStore storage.Store,
-	overloadThreshold int,
-	targetThreshold int) Handler {
+	ocnStore ocnstorage.Store,
+	paramStore paramstorage.Store) Handler {
 	return &handler{
 		e2controlHandler:  e2controlHandler,
 		monitorHandler:    monitorHandler,
 		numUEsMeasStore:   numUEsMeasStore,
 		neighborMeasStore: neighborMeasStore,
-		statisticsStore:   statisticsStore,
 		ocnStore:          ocnStore,
-		interval:          interval,
+		paramStore:        paramStore,
 	}
 }
 
@@ -56,18 +52,19 @@ type handler struct {
 	monitorHandler    monitor.Handler
 	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	statisticsStore   storage.Store
-	ocnStore          storage.Store
-
-	interval          int
-	overloadThreshold int
-	targetThreshold   int
+	ocnStore          ocnstorage.Store
+	paramStore        paramstorage.Store
 }
 
 func (h *handler) Run(ctx context.Context) error {
 	for {
+		interval, err := h.paramStore.Get(context.Background(), "interval")
+		if err != nil {
+			log.Error(err)
+			continue
+		}
 		select {
-		case <-time.After(time.Duration(h.interval) * time.Second):
+		case <-time.After(time.Duration(interval) * time.Second):
 			// ToDo should run as goroutine
 			h.startControlLogic(ctx)
 		case <-ctx.Done():
@@ -129,30 +126,49 @@ func (h *handler) updateOcnStore(ctx context.Context) error {
 		ids := e.Key
 		neighborList := e.Value.([]storage.IDs)
 
-		if e, err := h.ocnStore.Get(ctx, ids); err != nil {
+		if _, err := h.ocnStore.Get(ctx, ids); err != nil {
 			// the new cells connected
-			nOcnMap := make(map[storage.IDs]meastype.QOffsetRange)
-			for _, nIDs := range neighborList {
-				nOcnMap[nIDs] = RcPreRanParamDefaultOCN
-			}
-			_, err = h.ocnStore.Put(ctx, ids, storage.OcnMap{
-				Value: nOcnMap,
+			_, err = h.ocnStore.Put(ctx, ids, &ocnstorage.OcnMap{
+				Value: make(map[storage.IDs]meastype.QOffsetRange),
 			})
 			if err != nil {
+				close(ch)
 				return err
 			}
-		} else {
-			nOcnMap := e.Value.(storage.OcnMap).Value
-			// delete removed neighbor
-			for k := range nOcnMap {
-				if !h.containsIDs(k, neighborList) {
-					delete(nOcnMap, k)
+			for _, nIDs := range neighborList {
+				err = h.ocnStore.PutInnerMap(ctx, ids, nIDs, RcPreRanParamDefaultOCN)
+				if err != nil {
+					close(ch)
+					return err
 				}
 			}
+		} else {
+			// delete removed neighbor
+			inCh := make(chan ocnstorage.InnerEntry)
+			go func(inCh chan ocnstorage.InnerEntry) {
+				err := h.ocnStore.ListInnerElement(ctx, ids, inCh)
+				if err != nil {
+					log.Error(err)
+					close(ch)
+					close(inCh)
+				}
+			}(inCh)
+
+			for k := range inCh {
+				if !h.containsIDs(k.Key, neighborList) {
+					err = h.ocnStore.DeleteInnerElement(ctx, ids, k.Key)
+					close(ch)
+					return err
+				}
+			}
+
 			// add new neighbor
 			for _, n := range neighborList {
-				if _, ok := nOcnMap[n]; !ok {
-					nOcnMap[n] = RcPreRanParamDefaultOCN
+				if _, err = h.ocnStore.GetInnerMap(ctx, ids, n); err != nil {
+					err = h.ocnStore.PutInnerMap(ctx, ids, n, RcPreRanParamDefaultOCN)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -203,6 +219,21 @@ func (h *handler) getCellList(ctx context.Context) ([]storage.IDs, error) {
 }
 
 func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cells []storage.IDs, totalNumUEs int) error {
+
+	targetThreshold, err := h.paramStore.Get(context.Background(), "target_threshold")
+	if err != nil {
+		return err
+	}
+	overloadThreshold, err := h.paramStore.Get(context.Background(), "overload_threshold")
+	if err != nil {
+		return err
+	}
+
+	ocnDeltaFactor, err := h.paramStore.Get(context.Background(), "delta_ocn")
+	if err != nil {
+		return err
+	}
+
 	neighbors, err := h.neighborMeasStore.Get(ctx, ids)
 	if err != nil {
 		return err
@@ -217,53 +248,57 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 		return err
 	}
 	capSCell := h.getCapacity(1, totalNumUEs, numUEsSCell)
-	if 1-capSCell < h.targetThreshold {
+	if 1-capSCell < targetThreshold {
 		// send control message to reduce OCn for all neighbors
 		for _, nCellID := range neighborList {
-			entry, err := h.ocnStore.Get(ctx, ids)
+			ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
 			if err != nil {
 				return err
 			}
-			ocn := entry.Value.(storage.OcnMap).Value[nCellID]
-			if ocn-OCNDeltaFactor < meastype.QOffsetMinus24dB {
+			if ocn-meastype.QOffsetRange(ocnDeltaFactor) < meastype.QOffsetMinus24dB {
 				ocn = meastype.QOffsetMinus24dB
 			} else {
-				ocn = ocn - OCNDeltaFactor
+				ocn = ocn - meastype.QOffsetRange(ocnDeltaFactor)
 			}
 
 			err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
 			if err != nil {
 				return err
 			}
-			entry.Value.(storage.OcnMap).Value[nCellID] = ocn
+			err = h.ocnStore.PutInnerMap(ctx, ids, nCellID, ocn)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	// if sCell load > overload threshold && nCell < target load threshold
 	// increase Ocn
-	if 1-capSCell > h.overloadThreshold {
+	if 1-capSCell > overloadThreshold {
 		for _, nCellID := range neighborList {
 			numUEsNCell, err := h.numUE(ctx, nCellID.PlmnID, nCellID.CellID, cells)
 			if err != nil {
 				log.Warnf("there is no num(UEs) measurement value; this neighbor (plmnid-%v:cid-%v) may not be controlled by this xAPP; set num(UEs) to 0", nCellID.PlmnID, nCellID.CellID)
 			}
 			capNCell := h.getCapacity(1, totalNumUEs, numUEsNCell)
-			if 1-capNCell < h.targetThreshold {
-				entry, err := h.ocnStore.Get(ctx, ids)
+			if 1-capNCell < targetThreshold {
+				ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
 				if err != nil {
 					return err
 				}
-				ocn := entry.Value.(storage.OcnMap).Value[nCellID]
-				if ocn+OCNDeltaFactor > meastype.QOffsetMinus24dB {
+				if ocn+meastype.QOffsetRange(ocnDeltaFactor) > meastype.QOffsetMinus24dB {
 					ocn = meastype.QOffset24dB
 				} else {
-					ocn = ocn + OCNDeltaFactor
+					ocn = ocn + meastype.QOffsetRange(ocnDeltaFactor)
 				}
 				err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
 				if err != nil {
 					return err
 				}
-				entry.Value.(storage.OcnMap).Value[nCellID] = ocn
+				err = h.ocnStore.PutInnerMap(ctx, ids, nCellID, ocn)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

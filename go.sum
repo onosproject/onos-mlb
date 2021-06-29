@@ -236,8 +236,8 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/onosproject/onos-api/go v0.7.20/go.mod h1:xTlcjPQDGRUMiXtgWDGj9SA6+5pC9qY8B5A1ta9CoZc=
 github.com/onosproject/onos-api/go v0.7.62/go.mod h1:0qXWs8DbOSW/jSSX2mr0yGhuPzREpM0H679rXtCfvmQ=
-github.com/onosproject/onos-api/go v0.7.66 h1:d+jbLU3SI4ZQUBT/7M5umSK6+VWszZkI6y7rR2U8K0c=
-github.com/onosproject/onos-api/go v0.7.66/go.mod h1:0qXWs8DbOSW/jSSX2mr0yGhuPzREpM0H679rXtCfvmQ=
+github.com/onosproject/onos-api/go v0.7.71 h1:nRZbUuT1ENJOXBLY1Jooq4OxBdEQL/RzUYorxQNE1VQ=
+github.com/onosproject/onos-api/go v0.7.71/go.mod h1:0qXWs8DbOSW/jSSX2mr0yGhuPzREpM0H679rXtCfvmQ=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.26 h1:N+CJWGeiXduT7SO3+JPjojR/BR93Shf5p59VBysv9Kk=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.26/go.mod h1:wWD8vJT9KMaj/Kt8lF2Kqjoco6nBMt4wtGr8ixtB3Kw=
 github.com/onosproject/onos-lib-go v0.7.0/go.mod h1:ttkK+fV2CULZFHiq6FBZ69i7/Nymi1Wow1DNy0Ik/2o=

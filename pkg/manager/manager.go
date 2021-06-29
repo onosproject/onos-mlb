@@ -7,12 +7,16 @@ package manager
 import (
 	"context"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-mlb/pkg/config"
 	"github.com/onosproject/onos-mlb/pkg/controller"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	"github.com/onosproject/onos-mlb/pkg/nib/uenib"
+	mlbnbi "github.com/onosproject/onos-mlb/pkg/northbound"
 	"github.com/onosproject/onos-mlb/pkg/southbound/e2control"
+	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
+	paramstorage "github.com/onosproject/onos-mlb/pkg/store/parameters"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 )
 
@@ -46,8 +50,24 @@ func NewManager(parameters AppParameters) *Manager {
 
 	numUEsMeasStore := storage.NewStore()
 	neighborMeasStore := storage.NewStore()
-	statisticsStore := storage.NewStore()
-	ocnStore := storage.NewStore()
+	ocnStore := ocnstorage.NewStore()
+	paramStore := paramstorage.NewStore()
+	err = paramStore.Put(context.Background(), "interval", interval)
+	if err != nil {
+		log.Error(err)
+	}
+	err = paramStore.Put(context.Background(), "delta_ocn", OCNDeltaFactor)
+	if err != nil {
+		log.Error(err)
+	}
+	err = paramStore.Put(context.Background(), "overload_threshold", parameters.OverloadThreshold)
+	if err != nil {
+		log.Error(err)
+	}
+	err = paramStore.Put(context.Background(), "target_threshold", parameters.TargetLoadThreshold)
+	if err != nil {
+		log.Error(err)
+	}
 
 	rnibHandler, err := rnib.NewHandler()
 	if err != nil {
@@ -62,7 +82,7 @@ func NewManager(parameters AppParameters) *Manager {
 	e2ControlHandler := e2control.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion,
 		AppID, parameters.E2tEndpoint)
 
-	ctrlHandler := controller.NewHandler(interval, e2ControlHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, statisticsStore, ocnStore, parameters.OverloadThreshold, parameters.TargetLoadThreshold)
+	ctrlHandler := controller.NewHandler(e2ControlHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, ocnStore, paramStore)
 
 	return &Manager{
 		handlers: handlers{
@@ -75,8 +95,8 @@ func NewManager(parameters AppParameters) *Manager {
 		stores: stores{
 			numUEsMeasStore:   numUEsMeasStore,
 			neighborMeasStore: neighborMeasStore,
-			statisticsStore:   statisticsStore,
 			ocnStore:          ocnStore,
+			paramStore:        paramStore,
 		},
 		channels: channels{},
 		configs: configs{
@@ -105,8 +125,8 @@ type handlers struct {
 type stores struct {
 	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
-	statisticsStore   storage.Store
-	ocnStore          storage.Store
+	ocnStore          ocnstorage.Store
+	paramStore        paramstorage.Store
 }
 
 type channels struct {
@@ -119,6 +139,35 @@ type configs struct {
 
 // Start starts this app's manager
 func (m *Manager) Start() error {
-	err := m.handlers.controllerHandler.Run(context.Background())
+	err := m.startNorthboundServer()
+	if err != nil {
+		return err
+	}
+	err = m.handlers.controllerHandler.Run(context.Background())
 	return err
+}
+
+func (m *Manager) startNorthboundServer() error {
+	s := northbound.NewServer(northbound.NewServerCfg(
+		m.configs.appConfigParams.CAPath,
+		m.configs.appConfigParams.KeyPath,
+		m.configs.appConfigParams.CertPath,
+		int16(m.configs.appConfigParams.GRPCPort),
+		true, northbound.SecurityConfig{}))
+	s.AddService(mlbnbi.NewService(m.stores.numUEsMeasStore,
+		m.stores.neighborMeasStore,
+		m.stores.ocnStore,
+		m.stores.paramStore))
+
+	doneCh := make(chan error)
+	go func() {
+		err := s.Serve(func(started string) {
+			log.Info("Started NBI on ", started)
+			close(doneCh)
+		})
+		if err != nil {
+			doneCh <- err
+		}
+	}()
+	return <-doneCh
 }

@@ -19,4 +19,7 @@ const (
 
 	// MLBAppDefaultInterval is the default value of MLB controller interval
 	MLBAppDefaultInterval = 10
+
+	// OCNDeltaFactor is the value how many inc/dec Ocn
+	OCNDeltaFactor = 3
 )
