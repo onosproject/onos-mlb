@@ -248,7 +248,8 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 		return err
 	}
 	capSCell := h.getCapacity(1, totalNumUEs, numUEsSCell)
-	if 1-capSCell < targetThreshold {
+	log.Debugf("Serving cell (%v) capacity: %v, load: %v / neighbor: %v / overload threshold %v, target threshold %v", ids, capSCell, 100-capSCell, cells, overloadThreshold, targetThreshold)
+	if 100-capSCell < targetThreshold {
 		// send control message to reduce OCn for all neighbors
 		for _, nCellID := range neighborList {
 			ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
@@ -274,19 +275,20 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 
 	// if sCell load > overload threshold && nCell < target load threshold
 	// increase Ocn
-	if 1-capSCell > overloadThreshold {
+	if 100-capSCell > overloadThreshold {
 		for _, nCellID := range neighborList {
 			numUEsNCell, err := h.numUE(ctx, nCellID.PlmnID, nCellID.CellID, cells)
 			if err != nil {
 				log.Warnf("there is no num(UEs) measurement value; this neighbor (plmnid-%v:cid-%v) may not be controlled by this xAPP; set num(UEs) to 0", nCellID.PlmnID, nCellID.CellID)
 			}
 			capNCell := h.getCapacity(1, totalNumUEs, numUEsNCell)
-			if 1-capNCell < targetThreshold {
+			log.Debugf("Serving cell (%v)'s neighbor cell (%v) capacity: %v, load: %v / overload threshold %v, target threshold %v", ids, nCellID, capNCell, 100-capNCell, overloadThreshold, targetThreshold)
+			if 100-capNCell < targetThreshold {
 				ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
 				if err != nil {
 					return err
 				}
-				if ocn+meastype.QOffsetRange(ocnDeltaFactor) > meastype.QOffsetMinus24dB {
+				if ocn+meastype.QOffsetRange(ocnDeltaFactor) > meastype.QOffset24dB {
 					ocn = meastype.QOffset24dB
 				} else {
 					ocn = ocn + meastype.QOffsetRange(ocnDeltaFactor)

@@ -14,6 +14,7 @@ import (
 
 // ParseUENIBNeighborAspectKey parses neighbor aspect key in UENIB
 func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, error) {
+	// ToDo: PCI app should store this with hex format
 	objects := strings.Split(string(key), ":")
 	if len(objects) != 4 {
 		return "", "", "", "", errors.NewNotSupported("neighbor aspect's key should have four key elements")
@@ -33,6 +34,32 @@ func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, 
 	ecgiType := objects[3]
 
 	return nodeID, plmnID, cid, ecgiType, nil
+}
+
+// ParseUENIBNeighborAspectValue parses neighbor aspect value in UENIB
+func ParseUENIBNeighborAspectValue(value string) (string, error) {
+	// ToDo: PCI app should store this with hex format
+	results := ""
+	idsList := strings.Split(value, ",")
+	for _, ids := range idsList {
+		idList := strings.Split(ids, ":")
+		plmnIDDec, err := strconv.Atoi(idList[0])
+		if err != nil {
+			return "", err
+		}
+		plmnID := fmt.Sprintf("%x", plmnIDDec)
+		cidDec, err := strconv.Atoi(idList[1])
+		if err != nil {
+			return "", err
+		}
+		cid := fmt.Sprintf("%x", cidDec)
+		if results == "" {
+			results = fmt.Sprintf("%s:%s:%s", plmnID, cid, idList[2])
+			continue
+		}
+		results = fmt.Sprintf("%s,%s:%s:%s", results, plmnID, cid, idList[2])
+	}
+	return results, nil
 }
 
 // ParseUENIBNumUEsAspectKey parses the number of UEs aspect key in UENIB
