@@ -80,6 +80,9 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 				return nil, err
 			}
 			uenibValue, err := h.createValue(string(v.Value), k)
+			if err != nil {
+				return nil, err
+			}
 			results = append(results, Element{
 				Key:   uenibKey,
 				Value: uenibValue,
