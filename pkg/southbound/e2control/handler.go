@@ -63,6 +63,7 @@ type handler struct {
 }
 
 func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeID string, offset int32) error {
+	log.Debugf("Sending control message: nCellID %v, nodeID %v, offset %v", ids, nodeID, offset)
 	header, err := h.createRcControlHeader(ids, DefaultPriority)
 	if err != nil {
 		return err

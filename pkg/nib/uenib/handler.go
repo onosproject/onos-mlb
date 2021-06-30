@@ -79,9 +79,10 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 			if err != nil {
 				return nil, err
 			}
+			uenibValue, err := h.createValue(string(v.Value), k)
 			results = append(results, Element{
 				Key:   uenibKey,
-				Value: string(v.Value),
+				Value: uenibValue,
 			})
 		}
 	}
@@ -117,5 +118,16 @@ func (h *handler) createKey(uenibID uenib.ID, aspect string) (Key, error) {
 		}, nil
 	default:
 		return Key{}, errors.NewNotSupported("unavailable aspects for this app")
+	}
+}
+
+func (h *handler) createValue(value string, aspect string) (string, error) {
+	switch aspect {
+	case AspectKeyNeighbors:
+		return idutils.ParseUENIBNeighborAspectValue(value)
+	case AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI:
+		return value, nil
+	default:
+		return "", errors.NewNotSupported("unavailable aspects for this app")
 	}
 }
