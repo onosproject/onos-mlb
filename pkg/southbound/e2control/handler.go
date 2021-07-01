@@ -86,11 +86,11 @@ func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeI
 }
 
 func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte, error) {
-	plmnidDec, err := decodeutils.DecodePlmnIDDecStrToBytes(ids.PlmnID)
+	plmnid, err := decodeutils.DecodePlmnIDHexStrToBytes(ids.PlmnID)
 	if err != nil {
 		return nil, err
 	}
-	cidDec, err := decodeutils.DecodeCIDDecStrToUint64(ids.CellID)
+	cid, err := decodeutils.DecodeCIDHexStrToUint64(ids.CellID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,11 +99,11 @@ func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte
 		CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{
 			NrCgi: &e2sm_rc_pre_v2.Nrcgi{
 				PLmnIdentity: &e2sm_rc_pre_v2.PlmnIdentity{
-					Value: plmnidDec,
+					Value: plmnid,
 				},
 				NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
 					Value: &e2sm_rc_pre_v2.BitString{
-						Value: cidDec,
+						Value: cid,
 						Len:   36,
 					},
 				},
