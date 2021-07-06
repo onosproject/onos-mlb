@@ -171,3 +171,16 @@ func (m *Manager) startNorthboundServer() error {
 	}()
 	return <-doneCh
 }
+
+// GetOcnStore returns Ocn store - for integration test
+func (m *Manager) GetOcnStore() ocnstorage.Store {
+	return m.stores.ocnStore
+}
+
+func (m *Manager) GetNumUEsStore() storage.Store {
+	return m.stores.numUEsMeasStore
+}
+
+func (m *Manager) GetNeighborStore() storage.Store {
+	return m.stores.neighborMeasStore
+}

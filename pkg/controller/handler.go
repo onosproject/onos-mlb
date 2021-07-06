@@ -249,7 +249,7 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 	}
 	capSCell := h.getCapacity(1, totalNumUEs, numUEsSCell)
 	log.Debugf("Serving cell (%v) capacity: %v, load: %v / neighbor: %v / overload threshold %v, target threshold %v", ids, capSCell, 100-capSCell, cells, overloadThreshold, targetThreshold)
-	if 100-capSCell < targetThreshold {
+	if 100-capSCell < targetThreshold && 100-capSCell < overloadThreshold {
 		// send control message to reduce OCn for all neighbors
 		for _, nCellID := range neighborList {
 			ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
@@ -271,6 +271,7 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 				return err
 			}
 		}
+		return nil
 	}
 
 	// if sCell load > overload threshold && nCell < target load threshold

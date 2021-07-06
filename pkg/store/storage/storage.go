@@ -158,6 +158,6 @@ func (s *store) Print() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for k, v := range s.storage {
-		log.Debugf("key - %v / value - %v", k, v)
+		log.Infof("key - %v / value - %v", k, v)
 	}
 }
