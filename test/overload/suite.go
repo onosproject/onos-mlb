@@ -46,8 +46,3 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 		Set("ran-simulator.pci.modelName", "three-cell-n-node-model")
 	return sdran.Install(true)
 }
-
-// TearDownTestSuite uninstalls helm chart released
-func (s *TestSuite) TearDownTestSuite() error {
-	return s.sdran.Uninstall()
-}
