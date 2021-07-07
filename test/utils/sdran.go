@@ -238,6 +238,7 @@ func verifyOcnStoreSize(ctx context.Context, t *testing.T, store ocnstorage.Stor
 		numElem++
 	}
 	if numElem != OcnStoreSize {
+		t.Logf("Waiting until Ocn store size become %d; currently %d", OcnStoreSize, numElem)
 		verify = false
 	}
 	return verify
