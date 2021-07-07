@@ -13,17 +13,18 @@ import (
 	"testing"
 )
 
+// TestOverloadedCellsMlb is the test function for Overload suite
 func (s *TestSuite) TestOverloadedCellsMlb(t *testing.T) {
 	cfg := manager.AppParameters{
-		CAPath:      "/tmp/tls.cacrt",
-		KeyPath:     "/tmp/tls.key",
-		CertPath:    "/tmp/tls.crt",
-		ConfigPath:  "/tmp/config.json",
-		E2tEndpoint: "onos-e2t:5150",
-		UENIBEndpoint: "onos-uenib:5150",
-		GRPCPort:    5150,
-		RicActionID: 10,
-		OverloadThreshold: utils.LowestThreshold,
+		CAPath:              "/tmp/tls.cacrt",
+		KeyPath:             "/tmp/tls.key",
+		CertPath:            "/tmp/tls.crt",
+		ConfigPath:          "/tmp/config.json",
+		E2tEndpoint:         "onos-e2t:5150",
+		UENIBEndpoint:       "onos-uenib:5150",
+		GRPCPort:            5150,
+		RicActionID:         10,
+		OverloadThreshold:   utils.LowestThreshold,
 		TargetLoadThreshold: utils.HighestThreshold,
 	}
 

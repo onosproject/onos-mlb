@@ -57,6 +57,7 @@ func CreateSdranRelease(c *input.Context) (*helm.HelmRelease, error) {
 	return sdran, nil
 }
 
+// WaitForAllOcnIncreased waits until all Ocn values increased
 func WaitForAllOcnIncreased(ctx context.Context, t *testing.T, mgr *manager.Manager) error {
 	store := mgr.GetOcnStore()
 
@@ -71,7 +72,7 @@ func WaitForAllOcnIncreased(ctx context.Context, t *testing.T, mgr *manager.Mana
 			}
 			return fmt.Errorf("%s", "Test failed - Ocn store size is not matched")
 		case <-time.After(TestInterval):
-			if verifyOcnStoreSize(ctx, t, store) &&  verifyOcnIncreased(ctx, t, store) {
+			if verifyOcnStoreSize(ctx, t, store) && verifyOcnIncreased(ctx, t, store) {
 				return nil
 			}
 		}
@@ -104,6 +105,7 @@ func verifyOcnIncreased(ctx context.Context, t *testing.T, store ocnstorage.Stor
 	return verify
 }
 
+// WaitForAllOcnDecreased waits until all Ocn values decreased
 func WaitForAllOcnDecreased(ctx context.Context, t *testing.T, mgr *manager.Manager) error {
 	store := mgr.GetOcnStore()
 
@@ -151,10 +153,11 @@ func verifyOcnDecreased(ctx context.Context, t *testing.T, store ocnstorage.Stor
 	return verify
 }
 
-func WaitForOcnNoChangeAfterExecMLB(t *testing.T, mgr *manager.Manager, ctx context.Context) error {
+// WaitForOcnNoChangeAfterExecMLB check Ocn values not changed
+func WaitForOcnNoChangeAfterExecMLB(ctx context.Context, t *testing.T, mgr *manager.Manager) error {
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			if verifyUeNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
 				verifyUeNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
 				if verifyOcnStoreSize(ctx, t, mgr.GetOcnStore()) {
@@ -166,7 +169,7 @@ func WaitForOcnNoChangeAfterExecMLB(t *testing.T, mgr *manager.Manager, ctx cont
 				return fmt.Errorf("%s", "Test failed - Ocn store size is not matched")
 			}
 			return fmt.Errorf("%s", "Test failed - UENIB is not still ready")
-		case <- time.After(TestInterval):
+		case <-time.After(TestInterval):
 			if verifyUeNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
 				verifyUeNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
 				if verifyOcnStoreSize(ctx, t, mgr.GetOcnStore()) {

@@ -13,17 +13,18 @@ import (
 	"testing"
 )
 
+// TestTargetLoadedCellsMlb is the test function for Targetload suite
 func (s *TestSuite) TestTargetLoadedCellsMlb(t *testing.T) {
 	cfg := manager.AppParameters{
-		CAPath:      "/tmp/tls.cacrt",
-		KeyPath:     "/tmp/tls.key",
-		CertPath:    "/tmp/tls.crt",
-		ConfigPath:  "/tmp/config.json",
-		E2tEndpoint: "onos-e2t:5150",
-		UENIBEndpoint: "onos-uenib:5150",
-		GRPCPort:    5150,
-		RicActionID: 10,
-		OverloadThreshold: utils.HighestThreshold,
+		CAPath:              "/tmp/tls.cacrt",
+		KeyPath:             "/tmp/tls.key",
+		CertPath:            "/tmp/tls.crt",
+		ConfigPath:          "/tmp/config.json",
+		E2tEndpoint:         "onos-e2t:5150",
+		UENIBEndpoint:       "onos-uenib:5150",
+		GRPCPort:            5150,
+		RicActionID:         10,
+		OverloadThreshold:   utils.HighestThreshold,
 		TargetLoadThreshold: utils.LowestThreshold,
 	}
 
@@ -39,7 +40,7 @@ func (s *TestSuite) TestTargetLoadedCellsMlb(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), utils.TestTimeout)
 	defer cancel()
 
-	err = utils.WaitForOcnNoChangeAfterExecMLB(t, mgr, ctx)
+	err = utils.WaitForOcnNoChangeAfterExecMLB(ctx, t, mgr)
 	assert.NoError(t, err)
 
 	t.Log("Targetload suite test passed")

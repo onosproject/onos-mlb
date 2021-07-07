@@ -6,6 +6,7 @@ package utils
 
 import "os"
 
+// WriteFile writes file with path and content
 func WriteFile(path string, content string) error {
 	f, err := os.Create(path)
 	if err != nil {
