@@ -157,7 +157,7 @@ func (h *handler) storeUENIB(ctx context.Context, uenibList []uenib.Element) {
 				log.Error(err)
 			}
 		case uenib.AspectKeyNumUEsRANSim, uenib.AspectKeyNumUEsOAI:
-			err := h.storeUENIBMeasurement(ctx, key, u.Value.(string))
+			err := h.storeUENIBNumUEs(ctx, key, u.Value.(string))
 			if err != nil {
 				log.Error(err)
 			}
@@ -168,7 +168,7 @@ func (h *handler) storeUENIB(ctx context.Context, uenibList []uenib.Element) {
 	}
 }
 
-func (h *handler) storeUENIBMeasurement(ctx context.Context, key storage.IDs, value string) error {
+func (h *handler) storeUENIBNumUEs(ctx context.Context, key storage.IDs, value string) error {
 	measValue, err := strconv.Atoi(value)
 	if err != nil {
 		return err
