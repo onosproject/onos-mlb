@@ -26,11 +26,7 @@ func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, 
 		return "", "", "", "", errors.NewUnavailable("Failed to cast string PLMN ID to int")
 	}
 	plmnID := fmt.Sprintf("%x", plmnIDDec)
-	cidDec, err := strconv.Atoi(objects[2])
-	if err != nil {
-		return "", "", "", "", errors.NewUnavailable("Failed to cast string CID to int")
-	}
-	cid := fmt.Sprintf("%x", cidDec)
+	cid := objects[2]
 	ecgiType := objects[3]
 
 	return nodeID, plmnID, cid, ecgiType, nil
@@ -48,11 +44,7 @@ func ParseUENIBNeighborAspectValue(value string) (string, error) {
 			return "", err
 		}
 		plmnID := fmt.Sprintf("%x", plmnIDDec)
-		cidDec, err := strconv.Atoi(idList[1])
-		if err != nil {
-			return "", err
-		}
-		cid := fmt.Sprintf("%x", cidDec)
+		cid := idList[1]
 		if results == "" {
 			results = fmt.Sprintf("%s:%s:%s", plmnID, cid, idList[2])
 			continue
