@@ -22,9 +22,6 @@ const (
 	// DefaultE2TPort is the default E2T port
 	DefaultE2TPort = 5150
 
-	// DefaultPriority is the default priority value
-	DefaultPriority = 10
-
 	// RcPreRanParamIDForOCN is the ranparam_id used in RC-PRE control message
 	RcPreRanParamIDForOCN = 20
 
@@ -64,7 +61,7 @@ type handler struct {
 
 func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeID string, offset int32) error {
 	log.Debugf("Sending control message: nCellID %v, nodeID %v, offset %v", ids, nodeID, offset)
-	header, err := h.createRcControlHeader(ids, DefaultPriority)
+	header, err := h.createRcControlHeader(ids)
 	if err != nil {
 		return err
 	}
@@ -85,7 +82,7 @@ func (h *handler) SendControlMessage(ctx context.Context, ids storage.IDs, nodeI
 	return nil
 }
 
-func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte, error) {
+func (h *handler) createRcControlHeader(ids storage.IDs) ([]byte, error) {
 	plmnid, err := decodeutils.DecodePlmnIDHexStrToBytes(ids.PlmnID)
 	if err != nil {
 		return nil, err
@@ -110,7 +107,7 @@ func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte
 			},
 		},
 	}
-	e2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, cgi)
+	e2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(nil, cgi)
 
 	if err != nil {
 		return []byte{}, err
@@ -131,7 +128,10 @@ func (h *handler) createRcControlHeader(ids storage.IDs, priority int32) ([]byte
 }
 
 func (h *handler) createRcControlMessage(ranParamID int32, ranParamName string, ranParamValue int32) ([]byte, error) {
-	ranParamValueInt := pdubuilder.CreateRanParameterValueInt(ranParamValue)
+	ranParamValueInt, err := pdubuilder.CreateRanParameterValueInt(uint32(ranParamValue))
+	if err != nil {
+		return []byte{}, err
+	}
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlMessage(ranParamID, ranParamName, ranParamValueInt)
 	if err != nil {
 		return []byte{}, err

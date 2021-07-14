@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-api/go/onos/uenib"
-	"strconv"
 	"strings"
 )
 
@@ -21,11 +20,7 @@ func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, 
 	}
 
 	nodeID := objects[0]
-	plmnIDDec, err := strconv.Atoi(objects[1])
-	if err != nil {
-		return "", "", "", "", errors.NewUnavailable("Failed to cast string PLMN ID to int")
-	}
-	plmnID := fmt.Sprintf("%x", plmnIDDec)
+	plmnID := fmt.Sprintf("%x", objects[1])
 	cid := objects[2]
 	ecgiType := objects[3]
 
@@ -39,11 +34,7 @@ func ParseUENIBNeighborAspectValue(value string) (string, error) {
 	idsList := strings.Split(value, ",")
 	for _, ids := range idsList {
 		idList := strings.Split(ids, ":")
-		plmnIDDec, err := strconv.Atoi(idList[0])
-		if err != nil {
-			return "", err
-		}
-		plmnID := fmt.Sprintf("%x", plmnIDDec)
+		plmnID := idList[0]
 		cid := idList[1]
 		if results == "" {
 			results = fmt.Sprintf("%s:%s:%s", plmnID, cid, idList[2])
