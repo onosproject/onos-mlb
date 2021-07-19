@@ -56,3 +56,17 @@ func ParseUENIBNumUEsAspectKey(key uenib.ID) (string, string, error) {
 	coi := objects[1]
 	return nodeID, coi, nil
 }
+
+// Uint64ToBitString converts uint64 to a bit string byte array
+func Uint64ToBitString(value uint64, bitCount int) []byte {
+	result := make([]byte, bitCount/8+1)
+	if bitCount%8 > 0 {
+		value = value << (8 - bitCount%8)
+	}
+
+	for i := 0; i <= (bitCount / 8); i++ {
+		result[i] = byte(value >> (((bitCount / 8) - i) * 8) & 0xFF)
+	}
+
+	return result
+}

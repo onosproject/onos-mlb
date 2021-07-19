@@ -12,6 +12,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 	decodeutils "github.com/onosproject/onos-mlb/pkg/utils/decode"
+	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2/v1beta1"
 	"google.golang.org/protobuf/proto"
 	"strconv"
@@ -100,7 +101,7 @@ func (h *handler) createRcControlHeader(ids storage.IDs) ([]byte, error) {
 				},
 				NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
 					Value: &e2sm_rc_pre_v2.BitString{
-						Value: cid,
+						Value: idutils.Uint64ToBitString(cid, 36),
 						Len:   36,
 					},
 				},
