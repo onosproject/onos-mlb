@@ -20,7 +20,7 @@ func ParseUENIBNeighborAspectKey(key uenib.ID) (string, string, string, string, 
 	}
 
 	nodeID := objects[0]
-	plmnID := fmt.Sprintf("%x", objects[1])
+	plmnID := objects[1]
 	cid := objects[2]
 	ecgiType := objects[3]
 
