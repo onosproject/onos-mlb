@@ -55,7 +55,6 @@ type handler struct {
 
 func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	req := &uenib.ListUERequest{
-		AspectTypes: []string{AspectKeyNeighbors, AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI},
 	}
 	resp, err := h.uenibClient.ListUEs(ctx, req)
 	if err != nil {
