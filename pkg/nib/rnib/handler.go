@@ -42,12 +42,15 @@ type handler struct {
 
 func (h *handler) Get(ctx context.Context) ([]IDs, error) {
 	nodeIDs, err := h.GetE2NodeIDs(ctx)
+	log.Debugf("NodeIDs: %v", nodeIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	ids := make([]IDs, 0)
-	for _, nodeID := range nodeIDs {
+	for k, nodeID := range nodeIDs {
+		log.Debugf("k: %v", k)
+		log.Debugf("v: %v", nodeID)
 		e2Cells, err := h.GetE2Cells(ctx, nodeID)
 		if err != nil {
 			return nil, err
