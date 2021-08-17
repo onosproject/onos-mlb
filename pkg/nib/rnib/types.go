@@ -6,6 +6,7 @@ package rnib
 
 // IDs is an ID of RNIB
 type IDs struct {
+	E2ID   string
 	NodeID string
 	CID    string
 	COI    string

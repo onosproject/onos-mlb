@@ -73,13 +73,14 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 		uenib := object.GetUE()
 		aspects := uenib.GetAspects()
+		e2ID := uenib.GetID()
 		log.Debugf("uenib: %v", uenib)
 		log.Debugf("aspects: %v", aspects)
 		for k, v := range aspects {
 			log.Debugf("k: %v", k)
 			log.Debugf("v: %v", string(v.Value))
 
-			uenibKey, err := h.createKey(k)
+			uenibKey, err := h.createKey(k, e2ID)
 			if err != nil {
 				log.Debugf("skip this aspect type: %v, because of this: %v", uenibKey.Aspect, err)
 				continue
@@ -99,7 +100,7 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	return results, nil
 }
 
-func (h *handler) createKey(aspectKey string) (Key, error) {
+func (h *handler) createKey(aspectKey string, e2id uenib.ID) (Key, error) {
 	cellID := uenib.ID(strings.Split(aspectKey, "/")[0])
 	aspectType := strings.Split(aspectKey, "/")[1]
 
@@ -113,6 +114,7 @@ func (h *handler) createKey(aspectKey string) (Key, error) {
 			}, err
 		}
 		return Key{
+			E2ID: e2id,
 			NodeID: nodeID,
 			PlmnID: plmnID,
 			CID:    cid,
@@ -127,6 +129,7 @@ func (h *handler) createKey(aspectKey string) (Key, error) {
 			}, err
 		}
 		return Key{
+			E2ID: e2id,
 			NodeID: nodeID,
 			COI:    coi,
 			Aspect: aspectType,

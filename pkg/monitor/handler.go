@@ -103,7 +103,7 @@ func (h *handler) fillKeys(rnibList []rnib.IDs, uenibList []uenib.Element, plmni
 	for _, elem := range uenibList {
 		switch elem.Key.Aspect {
 		case uenib.AspectKeyNeighbors:
-			coi, err := h.getCOI(elem.Key.NodeID, elem.Key.CID, rnibList)
+			coi, err := h.getCOI(string(elem.Key.E2ID), elem.Key.NodeID, elem.Key.CID, rnibList)
 			if err != nil {
 				return nil, err
 			}
@@ -111,7 +111,7 @@ func (h *handler) fillKeys(rnibList []rnib.IDs, uenibList []uenib.Element, plmni
 			results = append(results, elem)
 		case uenib.AspectKeyNumUEsRANSim, uenib.AspectKeyNumUEsOAI:
 			elem.Key.PlmnID = plmnid
-			cid, err := h.getCID(elem.Key.NodeID, elem.Key.COI, rnibList)
+			cid, err := h.getCID(string(elem.Key.E2ID), elem.Key.NodeID, elem.Key.COI, rnibList)
 			if err != nil {
 				return nil, err
 			}
@@ -124,18 +124,18 @@ func (h *handler) fillKeys(rnibList []rnib.IDs, uenibList []uenib.Element, plmni
 	return results, nil
 }
 
-func (h *handler) getCOI(nodeID string, cid string, rnibList []rnib.IDs) (string, error) {
+func (h *handler) getCOI(e2id string, nodeID string, cid string, rnibList []rnib.IDs) (string, error) {
 	for _, ids := range rnibList {
-		if ids.CID == cid && ids.NodeID == nodeID {
+		if ids.E2ID == e2id && ids.CID == cid && ids.NodeID == nodeID {
 			return ids.COI, nil
 		}
 	}
 	return "", errors.NewNotFound("could not search cell object id with CID and nodeID in rnib list")
 }
 
-func (h *handler) getCID(nodeID string, coi string, rnibList []rnib.IDs) (string, error) {
+func (h *handler) getCID(e2id string, nodeID string, coi string, rnibList []rnib.IDs) (string, error) {
 	for _, ids := range rnibList {
-		if ids.COI == coi && ids.NodeID == nodeID {
+		if ids.E2ID == e2id && ids.COI == coi && ids.NodeID == nodeID {
 			return ids.CID, nil
 		}
 	}

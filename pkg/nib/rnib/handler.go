@@ -9,6 +9,7 @@ import (
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/topo"
+	"strings"
 )
 
 var log = logging.GetLogger("rnib")
@@ -41,23 +42,27 @@ type handler struct {
 }
 
 func (h *handler) Get(ctx context.Context) ([]IDs, error) {
-	nodeIDs, err := h.GetE2NodeIDs(ctx)
-	log.Debugf("NodeIDs: %v", nodeIDs)
+	e2NodeIDs, err := h.GetE2NodeIDs(ctx)
+	log.Debugf("e2NodeIDs: %v", e2NodeIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	ids := make([]IDs, 0)
-	for k, nodeID := range nodeIDs {
+	for k, e2NodeID := range e2NodeIDs {
 		log.Debugf("k: %v", k)
-		log.Debugf("v: %v", nodeID)
-		e2Cells, err := h.GetE2Cells(ctx, nodeID)
+		log.Debugf("v: %v", e2NodeID)
+		e2Cells, err := h.GetE2Cells(ctx, e2NodeID)
 		if err != nil {
 			return nil, err
 		}
 		for _, cell := range e2Cells {
+			log.Debugf("nodeID: %v", e2NodeID)
+			nodeID := strings.Split(string(e2NodeID), "/")[1]
+			e2id := strings.Split(string(e2NodeID), "/")[0]
 			ids = append(ids, IDs{
-				NodeID: string(nodeID),
+				E2ID: e2id,
+				NodeID: nodeID,
 				COI:    cell.CellObjectID,
 				CID:    cell.CellGlobalID.GetValue(),
 			})
