@@ -74,6 +74,9 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 		uenib := object.GetUE()
 		aspects := uenib.GetAspects()
 		uenibID := uenib.GetID()
+		log.Debugf("uenib: %v", uenib)
+		log.Debugf("aspects: %v", aspects)
+		log.Debugf("uenibID: %v", uenibID)
 		for k, v := range aspects {
 			uenibKey, err := h.createKey(uenibID, k)
 			if err != nil {
