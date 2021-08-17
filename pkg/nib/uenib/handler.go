@@ -73,17 +73,16 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 		uenib := object.GetUE()
 		aspects := uenib.GetAspects()
-		uenibID := uenib.GetID()
 		log.Debugf("uenib: %v", uenib)
 		log.Debugf("aspects: %v", aspects)
-		log.Debugf("uenibID: %v", uenibID)
 		for k, v := range aspects {
 			log.Debugf("k: %v", k)
 			log.Debugf("v: %v", string(v.Value))
-			
+
 			uenibKey, err := h.createKey(k)
 			if err != nil {
-				return nil, err
+				log.Debugf("skip this aspect type: %v, because of this: %v", uenibKey.Aspect, err)
+				continue
 			}
 			uenibValue, err := h.createValue(string(v.Value), k)
 			if err != nil {
