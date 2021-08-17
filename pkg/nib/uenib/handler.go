@@ -77,6 +77,8 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 		log.Debugf("aspects: %v", aspects)
 		log.Debugf("uenibID: %v", uenibID)
 		for k, v := range aspects {
+			log.Debugf("k: %v", k)
+			log.Debugf("v: %v", string(v.Value))
 			uenibKey, err := h.createKey(uenibID, k)
 			if err != nil {
 				return nil, err
