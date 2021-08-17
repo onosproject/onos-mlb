@@ -84,7 +84,7 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 				log.Debugf("skip this aspect type: %v, because of this: %v", uenibKey.Aspect, err)
 				continue
 			}
-			uenibValue, err := h.createValue(string(v.Value), k)
+			uenibValue, err := h.createValue(string(v.Value), uenibKey.Aspect)
 			if err != nil {
 				return nil, err
 			}
@@ -108,7 +108,9 @@ func (h *handler) createKey(aspectKey string) (Key, error) {
 		// it has nodeid, plmnid, cid, and cgi type
 		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(cellID)
 		if err != nil {
-			return Key{}, err
+			return Key{
+				Aspect: aspectKey,
+			}, err
 		}
 		return Key{
 			NodeID: nodeID,
@@ -120,7 +122,9 @@ func (h *handler) createKey(aspectKey string) (Key, error) {
 		// it has nodeid and coi
 		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(cellID)
 		if err != nil {
-			return Key{}, err
+			return Key{
+				Aspect: aspectKey,
+			}, err
 		}
 		return Key{
 			NodeID: nodeID,
@@ -128,7 +132,9 @@ func (h *handler) createKey(aspectKey string) (Key, error) {
 			Aspect: aspectType,
 		}, nil
 	default:
-		return Key{}, errors.NewNotSupported("unavailable aspects for this app")
+		return Key{
+			Aspect: aspectKey,
+		}, errors.NewNotSupported("unavailable aspects for this app")
 	}
 }
 
