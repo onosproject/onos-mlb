@@ -56,8 +56,7 @@ type handler struct {
 }
 
 func (h *handler) Get(ctx context.Context) ([]Element, error) {
-	req := &uenib.ListUERequest{
-	}
+	req := &uenib.ListUERequest{}
 	resp, err := h.uenibClient.ListUEs(ctx, req)
 	if err != nil {
 		return nil, err
