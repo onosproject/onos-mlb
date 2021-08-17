@@ -13,6 +13,7 @@ import (
 	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	"google.golang.org/grpc"
 	"io"
+	"strings"
 )
 
 const (
@@ -79,7 +80,8 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 		for k, v := range aspects {
 			log.Debugf("k: %v", k)
 			log.Debugf("v: %v", string(v.Value))
-			uenibKey, err := h.createKey(uenibID, k)
+			
+			uenibKey, err := h.createKey(k)
 			if err != nil {
 				return nil, err
 			}
@@ -98,11 +100,14 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	return results, nil
 }
 
-func (h *handler) createKey(uenibID uenib.ID, aspect string) (Key, error) {
-	switch aspect {
+func (h *handler) createKey(aspectKey string) (Key, error) {
+	cellID := uenib.ID(strings.Split(aspectKey, "/")[0])
+	aspectType := strings.Split(aspectKey, "/")[1]
+
+	switch aspectType {
 	case AspectKeyNeighbors:
 		// it has nodeid, plmnid, cid, and cgi type
-		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(uenibID)
+		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(cellID)
 		if err != nil {
 			return Key{}, err
 		}
@@ -110,18 +115,18 @@ func (h *handler) createKey(uenibID uenib.ID, aspect string) (Key, error) {
 			NodeID: nodeID,
 			PlmnID: plmnID,
 			CID:    cid,
-			Aspect: aspect,
+			Aspect: aspectType,
 		}, nil
 	case AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI:
 		// it has nodeid and coi
-		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(uenibID)
+		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(cellID)
 		if err != nil {
 			return Key{}, err
 		}
 		return Key{
 			NodeID: nodeID,
 			COI:    coi,
-			Aspect: aspect,
+			Aspect: aspectType,
 		}, nil
 	default:
 		return Key{}, errors.NewNotSupported("unavailable aspects for this app")
