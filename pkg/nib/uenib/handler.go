@@ -6,6 +6,7 @@ package uenib
 
 import (
 	"context"
+	"fmt"
 	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-api/go/onos/uenib"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
@@ -77,9 +78,6 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 		log.Debugf("uenib: %v", uenib)
 		log.Debugf("aspects: %v", aspects)
 		for k, v := range aspects {
-			log.Debugf("k: %v", k)
-			log.Debugf("v: %v", string(v.Value))
-
 			uenibKey, err := h.createKey(k, e2ID)
 			if err != nil {
 				log.Debugf("skip this aspect type: %v, because of this: %v", uenibKey.Aspect, err)
@@ -113,9 +111,9 @@ func (h *handler) createKey(aspectKey string, e2id uenib.ID) (Key, error) {
 				Aspect: aspectKey,
 			}, err
 		}
+		e2NodeID := fmt.Sprintf("%s/%s", e2id, nodeID)
 		return Key{
-			E2ID: e2id,
-			NodeID: nodeID,
+			NodeID: e2NodeID,
 			PlmnID: plmnID,
 			CID:    cid,
 			Aspect: aspectType,
@@ -123,14 +121,14 @@ func (h *handler) createKey(aspectKey string, e2id uenib.ID) (Key, error) {
 	case AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI:
 		// it has nodeid and coi
 		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(cellID)
+		e2NodeID := fmt.Sprintf("%s/%s", e2id, nodeID)
 		if err != nil {
 			return Key{
 				Aspect: aspectKey,
 			}, err
 		}
 		return Key{
-			E2ID: e2id,
-			NodeID: nodeID,
+			NodeID: e2NodeID,
 			COI:    coi,
 			Aspect: aspectType,
 		}, nil

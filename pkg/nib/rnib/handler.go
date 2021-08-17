@@ -9,7 +9,6 @@ import (
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/topo"
-	"strings"
 )
 
 var log = logging.GetLogger("rnib")
@@ -49,20 +48,15 @@ func (h *handler) Get(ctx context.Context) ([]IDs, error) {
 	}
 
 	ids := make([]IDs, 0)
-	for k, e2NodeID := range e2NodeIDs {
-		log.Debugf("k: %v", k)
-		log.Debugf("v: %v", e2NodeID)
+	for _, e2NodeID := range e2NodeIDs {
 		e2Cells, err := h.GetE2Cells(ctx, e2NodeID)
 		if err != nil {
 			return nil, err
 		}
 		for _, cell := range e2Cells {
 			log.Debugf("nodeID: %v", e2NodeID)
-			nodeID := strings.Split(string(e2NodeID), "/")[1]
-			e2id := strings.Split(string(e2NodeID), "/")[0]
 			ids = append(ids, IDs{
-				E2ID: e2id,
-				NodeID: nodeID,
+				NodeID: string(e2NodeID),
 				COI:    cell.CellObjectID,
 				CID:    cell.CellGlobalID.GetValue(),
 			})

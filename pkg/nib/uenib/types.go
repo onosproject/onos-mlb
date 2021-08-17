@@ -4,8 +4,6 @@
 
 package uenib
 
-import "github.com/onosproject/onos-api/go/onos/uenib"
-
 // Element is an element of UENIB
 type Element struct {
 	Key   Key
@@ -14,7 +12,6 @@ type Element struct {
 
 // Key is the key of UENIB element
 type Key struct {
-	E2ID   uenib.ID
 	NodeID string
 	PlmnID string
 	CID    string
