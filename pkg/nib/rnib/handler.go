@@ -41,20 +41,22 @@ type handler struct {
 }
 
 func (h *handler) Get(ctx context.Context) ([]IDs, error) {
-	nodeIDs, err := h.GetE2NodeIDs(ctx)
+	e2NodeIDs, err := h.GetE2NodeIDs(ctx)
+	log.Debugf("e2NodeIDs: %v", e2NodeIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	ids := make([]IDs, 0)
-	for _, nodeID := range nodeIDs {
-		e2Cells, err := h.GetE2Cells(ctx, nodeID)
+	for _, e2NodeID := range e2NodeIDs {
+		e2Cells, err := h.GetE2Cells(ctx, e2NodeID)
 		if err != nil {
 			return nil, err
 		}
 		for _, cell := range e2Cells {
+			log.Debugf("nodeID: %v", e2NodeID)
 			ids = append(ids, IDs{
-				NodeID: string(nodeID),
+				NodeID: string(e2NodeID),
 				COI:    cell.CellObjectID,
 				CID:    cell.CellGlobalID.GetValue(),
 			})

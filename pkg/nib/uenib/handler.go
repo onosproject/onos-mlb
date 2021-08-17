@@ -6,6 +6,7 @@ package uenib
 
 import (
 	"context"
+	"fmt"
 	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-api/go/onos/uenib"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
@@ -13,6 +14,7 @@ import (
 	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	"google.golang.org/grpc"
 	"io"
+	"strings"
 )
 
 const (
@@ -54,9 +56,7 @@ type handler struct {
 }
 
 func (h *handler) Get(ctx context.Context) ([]Element, error) {
-	req := &uenib.ListUERequest{
-		AspectTypes: []string{AspectKeyNeighbors, AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI},
-	}
+	req := &uenib.ListUERequest{}
 	resp, err := h.uenibClient.ListUEs(ctx, req)
 	if err != nil {
 		return nil, err
@@ -73,13 +73,16 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 		uenib := object.GetUE()
 		aspects := uenib.GetAspects()
-		uenibID := uenib.GetID()
+		e2ID := uenib.GetID()
+		log.Debugf("uenib: %v", uenib)
+		log.Debugf("aspects: %v", aspects)
 		for k, v := range aspects {
-			uenibKey, err := h.createKey(uenibID, k)
+			uenibKey, err := h.createKey(k, e2ID)
 			if err != nil {
-				return nil, err
+				log.Debugf("skip this aspect type: %v, because of this: %v", uenibKey.Aspect, err)
+				continue
 			}
-			uenibValue, err := h.createValue(string(v.Value), k)
+			uenibValue, err := h.createValue(string(v.Value), uenibKey.Aspect)
 			if err != nil {
 				return nil, err
 			}
@@ -94,33 +97,44 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	return results, nil
 }
 
-func (h *handler) createKey(uenibID uenib.ID, aspect string) (Key, error) {
-	switch aspect {
+func (h *handler) createKey(aspectKey string, e2id uenib.ID) (Key, error) {
+	cellID := uenib.ID(strings.Split(aspectKey, "/")[0])
+	aspectType := strings.Split(aspectKey, "/")[1]
+
+	switch aspectType {
 	case AspectKeyNeighbors:
 		// it has nodeid, plmnid, cid, and cgi type
-		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(uenibID)
+		nodeID, plmnID, cid, _, err := idutils.ParseUENIBNeighborAspectKey(cellID)
 		if err != nil {
-			return Key{}, err
+			return Key{
+				Aspect: aspectKey,
+			}, err
 		}
+		e2NodeID := fmt.Sprintf("%s/%s", e2id, nodeID)
 		return Key{
-			NodeID: nodeID,
+			NodeID: e2NodeID,
 			PlmnID: plmnID,
 			CID:    cid,
-			Aspect: aspect,
+			Aspect: aspectType,
 		}, nil
 	case AspectKeyNumUEsRANSim, AspectKeyNumUEsOAI:
 		// it has nodeid and coi
-		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(uenibID)
+		nodeID, coi, err := idutils.ParseUENIBNumUEsAspectKey(cellID)
+		e2NodeID := fmt.Sprintf("%s/%s", e2id, nodeID)
 		if err != nil {
-			return Key{}, err
+			return Key{
+				Aspect: aspectKey,
+			}, err
 		}
 		return Key{
-			NodeID: nodeID,
+			NodeID: e2NodeID,
 			COI:    coi,
-			Aspect: aspect,
+			Aspect: aspectType,
 		}, nil
 	default:
-		return Key{}, errors.NewNotSupported("unavailable aspects for this app")
+		return Key{
+			Aspect: aspectKey,
+		}, errors.NewNotSupported("unavailable aspects for this app")
 	}
 }
 
