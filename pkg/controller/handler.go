@@ -77,6 +77,10 @@ func (h *handler) startControlLogic(ctx context.Context) {
 	// run monitor handler
 	err := h.monitorHandler.Monitor(ctx)
 	if err != nil {
+		if err.Error() == monitor.WarnMsgRNIBEmpty {
+			log.Warnf(err.Error())
+			return
+		}
 		log.Error(err)
 		return
 	}
