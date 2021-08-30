@@ -70,3 +70,9 @@ func Uint64ToBitString(value uint64, bitCount int) []byte {
 
 	return result
 }
+
+// ParseCellTopoID parses TopoID to nodeID and cellID
+func ParseCellTopoID(cellTopoID string) (string, string) {
+	ids := strings.Split(cellTopoID, "/")
+	return fmt.Sprintf("%s/%s", ids[0], ids[1]), ids[2]
+}

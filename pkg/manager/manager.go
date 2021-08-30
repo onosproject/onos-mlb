@@ -12,7 +12,6 @@ import (
 	"github.com/onosproject/onos-mlb/pkg/controller"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
-	"github.com/onosproject/onos-mlb/pkg/nib/uenib"
 	mlbnbi "github.com/onosproject/onos-mlb/pkg/northbound"
 	"github.com/onosproject/onos-mlb/pkg/southbound/e2control"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
@@ -73,11 +72,7 @@ func NewManager(parameters AppParameters) *Manager {
 	if err != nil {
 		log.Error(err)
 	}
-	uenibHandler, err := uenib.NewHandler(parameters.UENIBEndpoint, parameters.CertPath, parameters.KeyPath)
-	if err != nil {
-		log.Error(err)
-	}
-	monitorHandler := monitor.NewHandler(rnibHandler, uenibHandler, numUEsMeasStore, neighborMeasStore, ocnStore)
+	monitorHandler := monitor.NewHandler(rnibHandler, numUEsMeasStore, neighborMeasStore, ocnStore)
 
 	e2ControlHandler := e2control.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion,
 		AppID, parameters.E2tEndpoint)
@@ -87,7 +82,6 @@ func NewManager(parameters AppParameters) *Manager {
 	return &Manager{
 		handlers: handlers{
 			rnibHandler:       rnibHandler,
-			uenibHandler:      uenibHandler,
 			monitorHandler:    monitorHandler,
 			e2ControlHandler:  e2ControlHandler,
 			controllerHandler: ctrlHandler,
@@ -116,7 +110,6 @@ type Manager struct {
 
 type handlers struct {
 	rnibHandler       rnib.Handler
-	uenibHandler      uenib.Handler
 	monitorHandler    monitor.Handler
 	e2ControlHandler  e2control.Handler
 	controllerHandler controller.Handler

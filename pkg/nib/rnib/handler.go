@@ -6,15 +6,25 @@ package rnib
 
 import (
 	"context"
+	"fmt"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
 
 var log = logging.GetLogger("rnib")
 
+const (
+	// AspectKeyNumUEsRANSim is the R-NIB aspect key of the number of UEs for RAN-Simulator
+	AspectKeyNumUEsRANSim = "RRC.Conn.Avg"
+
+	// AspectKeyNumUEsOAI is the R-NIB aspect key of the number of UEs for OAI
+	AspectKeyNumUEsOAI = "RRC.ConnMean"
+)
+
 // NewHandler generates the new RNIB handler
-func NewHandler() (Handler, error) {
+func NewHandler() (*handler, error) {
 	rnibClient, err := topo.NewClient()
 	if err != nil {
 		return nil, err
@@ -27,93 +37,98 @@ func NewHandler() (Handler, error) {
 // Handler includes RNIB handler's all functions
 type Handler interface {
 	// Get gets all RNIB
-	Get(ctx context.Context) ([]IDs, error)
-
-	// GetE2NodeIDs gets all E2 Node IDs
-	GetE2NodeIDs(ctx context.Context) ([]topoapi.ID, error)
-
-	// GetE2Cells gets all cells managed by all E2 nodes
-	GetE2Cells(ctx context.Context, nodeID topoapi.ID) ([]topoapi.E2Cell, error)
+	Get(ctx context.Context) ([]Element, error)
 }
 
 type handler struct {
 	rnibClient topo.Client
 }
 
-func (h *handler) Get(ctx context.Context) ([]IDs, error) {
-	e2NodeIDs, err := h.GetE2NodeIDs(ctx)
-	log.Debugf("e2NodeIDs: %v", e2NodeIDs)
+func (h *handler) Get(ctx context.Context) ([]Element, error) {
+	objects, err := h.rnibClient.List(ctx, topo.WithListFilters(getE2CellFilter()))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
-	ids := make([]IDs, 0)
-	for _, e2NodeID := range e2NodeIDs {
-		e2Cells, err := h.GetE2Cells(ctx, e2NodeID)
+	result := make([]Element, 0)
+
+	log.Debugf("R-NIB objects - %s", objects)
+	for _, obj := range objects {
+		log.Debugf("R-NIB each obj: %s", obj)
+		cellTopoID := obj.GetID()
+		e2NodeID, cellIdentity := idutils.ParseCellTopoID(string(cellTopoID))
+		cellObject := topoapi.E2Cell{}
+		err = obj.GetAspect(&cellObject)
 		if err != nil {
 			return nil, err
 		}
-		for _, cell := range e2Cells {
-			log.Debugf("nodeID: %v", e2NodeID)
-			ids = append(ids, IDs{
-				NodeID: string(e2NodeID),
-				COI:    cell.CellObjectID,
-				CID:    cell.CellGlobalID.GetValue(),
-			})
+
+		cellObjectID := cellObject.CellObjectID
+		if cellIdentity != cellObject.CellGlobalID.GetValue() {
+			return nil, fmt.Errorf("varification failed: In R-NIB, cell IDs in topo ID field and aspects are differnt")
+		}
+		// ToDo: add PLMN ID here for cell object in the future
+		plmnID := ""
+
+		if cellObjectID == "" || cellIdentity == "" {
+			return nil, fmt.Errorf("R-NIB is not ready yet")
+		}
+
+		ids := IDs{
+			TopoID:       cellTopoID,
+			E2NodeID:     e2NodeID,
+			CellObjectID: cellObjectID,
+			CellGlobalID: CellGlobalID{
+				CellIdentity: cellIdentity,
+				PlmnID:       plmnID,
+			},
+		}
+
+		neighbors := make([]CellGlobalID, 0)
+		for _, neighborCellID := range cellObject.NeighborCellIDs {
+			neighborCellGlobalID := CellGlobalID{
+				CellIdentity: neighborCellID.CellGlobalID.GetValue(),
+				PlmnID:       neighborCellID.PlmnID,
+			}
+			neighbors = append(neighbors, neighborCellGlobalID)
+		}
+		neighborElement := Element{
+			Key: Key{
+				IDs:    ids,
+				Aspect: Neighbors,
+			},
+			Value: neighbors,
+		}
+		result = append(result, neighborElement)
+
+		for kpiKey, kpiValue := range cellObject.KpiReports {
+			if kpiKey == AspectKeyNumUEsOAI || kpiKey == AspectKeyNumUEsRANSim {
+				kpiElement := Element{
+					Key: Key{
+						IDs:    ids,
+						Aspect: NumUEs,
+					},
+					Value: kpiValue,
+				}
+				result = append(result, kpiElement)
+				break
+			}
 		}
 	}
-	log.Debugf("Received RNIB: %v", ids)
-	return ids, nil
+
+	return result, nil
 }
 
-func (h *handler) GetE2NodeIDs(ctx context.Context) ([]topoapi.ID, error) {
-	objects, err := h.rnibClient.List(ctx, topo.WithListFilters(getControlRelationFilter()))
-	if err != nil {
-		return nil, err
-	}
-
-	e2NodeIDs := make([]topoapi.ID, len(objects))
-	for _, object := range objects {
-		relation := object.Obj.(*topoapi.Object_Relation)
-		e2NodeID := relation.Relation.TgtEntityID
-		e2NodeIDs = append(e2NodeIDs, e2NodeID)
-	}
-
-	return e2NodeIDs, nil
-}
-
-func (h *handler) GetE2Cells(ctx context.Context, nodeID topoapi.ID) ([]topoapi.E2Cell, error) {
+func getE2CellFilter() *topoapi.Filters {
 	filter := &topoapi.Filters{
-		RelationFilter: &topoapi.RelationFilter{SrcId: string(nodeID),
-			RelationKind: topoapi.CONTAINS,
-			TargetKind:   ""}}
-
-	objects, err := h.rnibClient.List(ctx, topo.WithListFilters(filter))
-	if err != nil {
-		return nil, err
-	}
-	var e2Cells []topoapi.E2Cell
-	for _, obj := range objects {
-		targetEntity := obj.GetEntity()
-		if targetEntity.GetKindID() == topoapi.E2CELL {
-			cellObject := topoapi.E2Cell{}
-			obj.GetAspect(&cellObject)
-			e2Cells = append(e2Cells, cellObject)
-		}
-	}
-
-	return e2Cells, nil
-}
-
-func getControlRelationFilter() *topoapi.Filters {
-	controlRelationFilter := &topoapi.Filters{
 		KindFilter: &topoapi.Filter{
 			Filter: &topoapi.Filter_Equal_{
 				Equal_: &topoapi.EqualFilter{
-					Value: topoapi.CONTROLS,
+					Value: topoapi.E2CELL,
 				},
 			},
 		},
 	}
-	return controlRelationFilter
+	return filter
 }
