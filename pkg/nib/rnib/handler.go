@@ -24,7 +24,7 @@ const (
 )
 
 // NewHandler generates the new RNIB handler
-func NewHandler() (*handler, error) {
+func NewHandler() (Handler, error) {
 	rnibClient, err := topo.NewClient()
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 		cellObjectID := cellObject.CellObjectID
 		if cellIdentity != cellObject.CellGlobalID.GetValue() {
-			return nil, fmt.Errorf("varification failed: In R-NIB, cell IDs in topo ID field and aspects are differnt")
+			return nil, fmt.Errorf("verification failed: In R-NIB, cell IDs in topo ID field and aspects are different")
 		}
 		// ToDo: add PLMN ID here for cell object in the future
 		plmnID := ""
