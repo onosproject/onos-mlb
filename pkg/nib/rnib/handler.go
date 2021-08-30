@@ -85,6 +85,10 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 			},
 		}
 
+		if len(cellObject.NeighborCellIDs) == 0 || len(cellObject.KpiReports) == 0 {
+			continue
+		}
+
 		neighbors := make([]CellGlobalID, 0)
 		for _, neighborCellID := range cellObject.NeighborCellIDs {
 			neighborCellGlobalID := CellGlobalID{

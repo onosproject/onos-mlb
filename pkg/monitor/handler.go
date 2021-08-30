@@ -6,6 +6,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
@@ -13,6 +14,10 @@ import (
 )
 
 var log = logging.GetLogger("monitor")
+
+const (
+	WarnMsgRNIBEmpty = "R-NIB is empty"
+)
 
 // NewHandler generates monitoring handler
 func NewHandler(rnibHandler rnib.Handler, numUEsMeasStore storage.Store, neighborMeasStore storage.Store, ocnStore ocnstorage.Store) Handler {
@@ -43,8 +48,7 @@ func (h *handler) Monitor(ctx context.Context) error {
 	if err != nil {
 		return err
 	} else if len(rnibList) == 0 {
-		log.Warnf("RNIB is empty - will be updated once E2T, KPIMON, and PCI push NIB")
-		return nil
+		return fmt.Errorf(WarnMsgRNIBEmpty)
 	}
 
 	// fill PLMN IDs in each element key since topo key does not have PLMN ID
