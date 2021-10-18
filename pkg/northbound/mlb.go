@@ -127,7 +127,7 @@ func (s *Server) GetOcn(ctx context.Context, request *mlbapi.GetOcnRequest) (*ml
 	go func(ch chan ocnstorage.Entry) {
 		err := s.ocnStore.ListAllInnerElement(ctx, ch)
 		if err != nil {
-			log.Error(err)
+			log.Warn(err)
 			close(ch)
 		}
 	}(ch)
