@@ -45,7 +45,7 @@ type handler struct {
 }
 
 func (h *handler) Get(ctx context.Context) ([]Element, error) {
-	objects, err := h.rnibClient.List(ctx, topo.WithListFilters(getE2CellFilter()))
+	objects, err := h.rnibClient.List(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -56,6 +56,9 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 	log.Debugf("R-NIB objects - %s", objects)
 	for _, obj := range objects {
 		log.Debugf("R-NIB each obj: %s", obj)
+		if obj.GetEntity() == nil || obj.GetEntity().GetKindID() != topoapi.E2CELL {
+			continue
+		}
 		cellTopoID := obj.GetID()
 		e2NodeID, cellIdentity := idutils.ParseCellTopoID(string(cellTopoID))
 		cellObject := topoapi.E2Cell{}
