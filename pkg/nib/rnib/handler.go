@@ -126,16 +126,3 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 	return result, nil
 }
-
-func getE2CellFilter() *topoapi.Filters {
-	filter := &topoapi.Filters{
-		KindFilter: &topoapi.Filter{
-			Filter: &topoapi.Filter_Equal_{
-				Equal_: &topoapi.EqualFilter{
-					Value: topoapi.E2CELL,
-				},
-			},
-		},
-	}
-	return filter
-}
