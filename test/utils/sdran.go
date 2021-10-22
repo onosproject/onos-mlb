@@ -158,8 +158,8 @@ func WaitForOcnNoChangeAfterExecMLB(ctx context.Context, t *testing.T, mgr *mana
 	for {
 		select {
 		case <-ctx.Done():
-			if verifyUeNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
-				verifyUeNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
+			if verifyRNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
+				verifyRNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
 				if verifyOcnStoreSize(ctx, t, mgr.GetOcnStore()) {
 					if verifyOcnNoChanged(ctx, t, mgr.GetOcnStore()) {
 						return nil
@@ -168,10 +168,10 @@ func WaitForOcnNoChangeAfterExecMLB(ctx context.Context, t *testing.T, mgr *mana
 				}
 				return fmt.Errorf("%s", "Test failed - Ocn store size is not matched")
 			}
-			return fmt.Errorf("%s", "Test failed - UENIB is not still ready")
+			return fmt.Errorf("%s", "Test failed - RNIB is not still ready")
 		case <-time.After(TestInterval):
-			if verifyUeNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
-				verifyUeNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
+			if verifyRNibNumUEs(ctx, t, mgr.GetNumUEsStore()) &&
+				verifyRNibNeighbor(ctx, t, mgr.GetNeighborStore()) {
 				if verifyOcnStoreSize(ctx, t, mgr.GetOcnStore()) {
 					if verifyOcnNoChanged(ctx, t, mgr.GetOcnStore()) {
 						return nil
@@ -183,7 +183,7 @@ func WaitForOcnNoChangeAfterExecMLB(ctx context.Context, t *testing.T, mgr *mana
 	}
 }
 
-func verifyUeNibNumUEs(ctx context.Context, t *testing.T, numUEStore storage.Store) bool {
+func verifyRNibNumUEs(ctx context.Context, t *testing.T, numUEStore storage.Store) bool {
 	result := 0
 	ch := make(chan *storage.Entry)
 	go func(ch chan *storage.Entry) {
@@ -198,13 +198,13 @@ func verifyUeNibNumUEs(ctx context.Context, t *testing.T, numUEStore storage.Sto
 	}
 
 	if result != TotalNumUEs {
-		t.Log("Waiting until UENIB has the number of UEs")
+		t.Log("Waiting until RNIB has the number of UEs")
 		return false
 	}
 	return true
 }
 
-func verifyUeNibNeighbor(ctx context.Context, t *testing.T, neighborStore storage.Store) bool {
+func verifyRNibNeighbor(ctx context.Context, t *testing.T, neighborStore storage.Store) bool {
 	result := 0
 	ch := make(chan *storage.Entry)
 	go func(ch chan *storage.Entry) {
@@ -219,7 +219,7 @@ func verifyUeNibNeighbor(ctx context.Context, t *testing.T, neighborStore storag
 	}
 
 	if result != TotalNumCells {
-		t.Log("Waiting until UENIB has neighbors")
+		t.Log("Waiting until RNIB has neighbors")
 		return false
 	}
 	return true
@@ -237,7 +237,8 @@ func verifyOcnStoreSize(ctx context.Context, t *testing.T, store ocnstorage.Stor
 	}(ch)
 
 	numElem := 0
-	for range ch {
+	for c := range ch {
+		t.Logf("Received store: %v", c)
 		numElem++
 	}
 	if numElem != OcnStoreSize {

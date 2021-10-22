@@ -55,10 +55,10 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 
 	log.Debugf("R-NIB objects - %s", objects)
 	for _, obj := range objects {
-		log.Debugf("R-NIB each obj: %s", obj)
 		if obj.GetEntity() == nil || obj.GetEntity().GetKindID() != topoapi.E2CELL {
 			continue
 		}
+		log.Debugf("R-NIB each obj: %s", obj)
 		cellTopoID := obj.GetID()
 		e2NodeID, cellIdentity := idutils.ParseCellTopoID(string(cellTopoID))
 		cellObject := topoapi.E2Cell{}
@@ -99,7 +99,9 @@ func (h *handler) Get(ctx context.Context) ([]Element, error) {
 				PlmnID:       neighborCellID.PlmnID,
 			}
 			neighbors = append(neighbors, neighborCellGlobalID)
+			plmnID = neighborCellID.PlmnID
 		}
+		ids.CellGlobalID.PlmnID = plmnID
 		neighborElement := Element{
 			Key: Key{
 				IDs:    ids,
