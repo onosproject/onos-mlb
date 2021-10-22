@@ -237,7 +237,8 @@ func verifyOcnStoreSize(ctx context.Context, t *testing.T, store ocnstorage.Stor
 	}(ch)
 
 	numElem := 0
-	for range ch {
+	for c := range ch {
+		t.Logf("Received store: %v", c)
 		numElem++
 	}
 	if numElem != OcnStoreSize {

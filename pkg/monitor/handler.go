@@ -16,7 +16,7 @@ import (
 var log = logging.GetLogger("monitor")
 
 const (
-	WarnMsgRNIBEmpty = "R-NIB is empty"
+	WarnMsgRNIBEmpty = "R-NIB does not have enough information - either KPIMON monitoring result or neighbor information is missing"
 )
 
 // NewHandler generates monitoring handler
@@ -51,29 +51,12 @@ func (h *handler) Monitor(ctx context.Context) error {
 		return fmt.Errorf(WarnMsgRNIBEmpty)
 	}
 
-	// fill PLMN IDs in each element key since topo key does not have PLMN ID
-	h.fillPlmnID(rnibList)
-
 	// store monitoring result
 	h.storeRNIB(ctx, rnibList)
 
 	log.Debugf("RNIB List %v", rnibList)
 
 	return nil
-}
-
-func (h *handler) fillPlmnID(rnibList []rnib.Element) {
-	mapPlmnID := make(map[string]string)
-	for _, e := range rnibList {
-		if e.Key.Aspect == rnib.Neighbors {
-			for _, id := range e.Value.([]rnib.CellGlobalID) {
-				mapPlmnID[id.CellIdentity] = id.PlmnID
-			}
-		}
-	}
-	for i := 0; i < len(rnibList); i++ {
-		rnibList[i].Key.IDs.CellGlobalID.PlmnID = mapPlmnID[rnibList[i].Key.IDs.CellGlobalID.CellIdentity]
-	}
 }
 
 func (h *handler) storeRNIB(ctx context.Context, rnibList []rnib.Element) {
