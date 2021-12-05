@@ -60,6 +60,26 @@ protos:
 		--entrypoint build/bin/compile-protos.sh \
 		onosproject/protoc-go:${ONOS_PROTOC_VERSION}
 
+integration-test-namespace:
+	(kubectl delete ns test || exit 0) && kubectl create ns test
+
+helmit-overload: integration-test-namespace # @HELP run overload tests locally
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
+			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
+			--suite overload
+
+helmit-underload: integration-test-namespace # @HELP run underload tests locally
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
+			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
+			--suite underload
+
+helmit-targetload: integration-test-namespace # @HELP run underload tests locally
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
+			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
+			--suite targetload
+
+integration-tests: helmit-overload helmit-underload helmit-targetload
+
 onos-mlb-docker: # @HELP build onos-mlb Docker image
 onos-mlb-docker:
 	@go mod vendor
