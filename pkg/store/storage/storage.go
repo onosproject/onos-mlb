@@ -6,15 +6,16 @@ package storage
 
 import (
 	"context"
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/store/event"
 	"github.com/onosproject/onos-mlb/pkg/store/watcher"
-	"sync"
 )
 
-var log = logging.GetLogger("store", "storage")
+var log = logging.GetLogger()
 
 var _ Store = &store{} // to check interface and struct in compile time (static check)
 

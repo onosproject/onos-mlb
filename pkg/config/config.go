@@ -6,13 +6,14 @@ package config
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
-	"strconv"
 )
 
-var log = logging.GetLogger("config")
+var log = logging.GetLogger()
 
 // Config is an interface including app config
 type Config interface {

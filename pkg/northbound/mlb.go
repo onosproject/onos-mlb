@@ -7,6 +7,7 @@ package northbound
 import (
 	"context"
 	"fmt"
+
 	mlbapi "github.com/onosproject/onos-api/go/onos/mlb"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/logging/service"
@@ -16,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log = logging.GetLogger("northbound")
+var log = logging.GetLogger()
 
 // NewService generates a new Service for NBI
 func NewService(numUEsMeasStore storage.Store,

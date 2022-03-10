@@ -6,6 +6,9 @@ package e2control
 
 import (
 	"context"
+	"strconv"
+	"strings"
+
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
@@ -15,8 +18,6 @@ import (
 	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2/v1beta1"
 	"google.golang.org/protobuf/proto"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 	RcPreRanParamNameForOCN = "ocn_rc"
 )
 
-var log = logging.GetLogger("southbound", "e2control")
+var log = logging.GetLogger()
 
 // NewHandler generates the new handler of this e2control session handler
 func NewHandler(smName string, smVersion string, appID string, e2tEndpoint string) Handler {
