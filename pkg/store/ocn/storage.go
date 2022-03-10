@@ -6,6 +6,8 @@ package ocnstorage
 
 import (
 	"context"
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
@@ -13,10 +15,9 @@ import (
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 	"github.com/onosproject/onos-mlb/pkg/store/watcher"
 	meastype "github.com/onosproject/rrm-son-lib/pkg/model/measurement/type"
-	"sync"
 )
 
-var log = logging.GetLogger("store", "ocnstorage")
+var log = logging.GetLogger()
 
 // NewStore generates a store object to save Ocn into a map
 func NewStore() Store {

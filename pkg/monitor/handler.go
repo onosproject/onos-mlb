@@ -7,13 +7,14 @@ package monitor
 import (
 	"context"
 	"fmt"
+
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 )
 
-var log = logging.GetLogger("monitor")
+var log = logging.GetLogger()
 
 const (
 	WarnMsgRNIBEmpty = "R-NIB does not have enough information - either KPIMON monitoring result or neighbor information is missing"

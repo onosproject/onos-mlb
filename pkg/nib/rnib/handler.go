@@ -7,13 +7,14 @@ package rnib
 import (
 	"context"
 	"fmt"
+
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	idutils "github.com/onosproject/onos-mlb/pkg/utils/parse"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
 
-var log = logging.GetLogger("rnib")
+var log = logging.GetLogger()
 
 const (
 	// AspectKeyNumUEsRANSim is the R-NIB aspect key of the number of UEs for RAN-Simulator

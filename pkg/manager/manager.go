@@ -6,6 +6,7 @@ package manager
 
 import (
 	"context"
+
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-mlb/pkg/config"
@@ -19,7 +20,7 @@ import (
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 )
 
-var log = logging.GetLogger("manager")
+var log = logging.GetLogger()
 
 // AppParameters includes all application parameters coming from arguments when starting this app
 type AppParameters struct {

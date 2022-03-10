@@ -6,6 +6,8 @@ package controller
 
 import (
 	"context"
+	"time"
+
 	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
@@ -14,10 +16,9 @@ import (
 	paramstorage "github.com/onosproject/onos-mlb/pkg/store/parameters"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
 	meastype "github.com/onosproject/rrm-son-lib/pkg/model/measurement/type"
-	"time"
 )
 
-var log = logging.GetLogger("controller")
+var log = logging.GetLogger()
 
 const (
 	// RcPreRanParamDefaultOCN is default Ocn value
