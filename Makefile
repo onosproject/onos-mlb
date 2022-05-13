@@ -41,19 +41,13 @@ protos:
 		onosproject/protoc-go:${ONOS_PROTOC_VERSION}
 
 helmit-overload: integration-test-namespace # @HELP run overload tests locally
-	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
-			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
-			--suite overload
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown --suite overload
 
 helmit-underload: integration-test-namespace # @HELP run underload tests locally
-	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
-			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
-			--suite underload
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown --suite underload
 
 helmit-targetload: integration-test-namespace # @HELP run underload tests locally
-	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown \
-			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
-			--suite targetload
+	helmit test -n test ./cmd/onos-mlb-test --timeout 30m --no-teardown --suite targetload
 
 integration-tests: helmit-overload helmit-underload helmit-targetload
 
