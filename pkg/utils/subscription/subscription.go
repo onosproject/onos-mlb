@@ -127,8 +127,6 @@ func CreateSubscriptionActions(policies []PolicyForOcn) (*e2api.Action, error) {
 		return nil, err
 	}
 
-	log.Infof("WOOJOONG: %+v", ad)
-
 	err = ad.Validate()
 	if err != nil {
 		return nil, err
