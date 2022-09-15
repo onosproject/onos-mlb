@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -39,10 +40,22 @@ func NewHandler() (Handler, error) {
 type Handler interface {
 	// Get gets all RNIB
 	Get(ctx context.Context) ([]Element, error)
+	GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topoapi.E2Node, error)
 }
 
 type handler struct {
 	rnibClient topo.Client
+}
+
+func (h *handler) GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topoapi.E2Node, error) {
+	object, err := h.rnibClient.Get(ctx, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	e2Node := &topoapi.E2Node{}
+	err = object.GetAspect(e2Node)
+
+	return e2Node, err
 }
 
 func (h *handler) Get(ctx context.Context) ([]Element, error) {
