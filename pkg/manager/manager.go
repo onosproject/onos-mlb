@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -6,6 +7,7 @@ package manager
 
 import (
 	"context"
+	"github.com/onosproject/onos-mlb/pkg/southbound/e2policy"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
@@ -14,7 +16,6 @@ import (
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	"github.com/onosproject/onos-mlb/pkg/nib/rnib"
 	mlbnbi "github.com/onosproject/onos-mlb/pkg/northbound"
-	"github.com/onosproject/onos-mlb/pkg/southbound/e2control"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
 	paramstorage "github.com/onosproject/onos-mlb/pkg/store/parameters"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
@@ -75,16 +76,20 @@ func NewManager(parameters AppParameters) *Manager {
 	}
 	monitorHandler := monitor.NewHandler(rnibHandler, numUEsMeasStore, neighborMeasStore, ocnStore)
 
-	e2ControlHandler := e2control.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion,
-		AppID, parameters.E2tEndpoint)
+	//e2ControlHandler := e2control.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion,
+	//	AppID, parameters.E2tEndpoint)
 
-	ctrlHandler := controller.NewHandler(e2ControlHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, ocnStore, paramStore)
+	e2PolicyHandler := e2policy.NewHandler(RcPreServiceModelName, RcPreServiceModelVersion, AppID, parameters.E2tEndpoint, rnibHandler)
+
+	//ctrlHandler := controller.NewHandler(e2ControlHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, ocnStore, paramStore)
+	ctrlHandler := controller.NewHandler(e2PolicyHandler, monitorHandler, numUEsMeasStore, neighborMeasStore, ocnStore, paramStore)
 
 	return &Manager{
 		handlers: handlers{
-			rnibHandler:       rnibHandler,
-			monitorHandler:    monitorHandler,
-			e2ControlHandler:  e2ControlHandler,
+			rnibHandler:    rnibHandler,
+			monitorHandler: monitorHandler,
+			//e2ControlHandler:  e2ControlHandler,
+			e2PolicyHandler:   e2PolicyHandler,
 			controllerHandler: ctrlHandler,
 		},
 		stores: stores{
@@ -110,9 +115,10 @@ type Manager struct {
 }
 
 type handlers struct {
-	rnibHandler       rnib.Handler
-	monitorHandler    monitor.Handler
-	e2ControlHandler  e2control.Handler
+	rnibHandler    rnib.Handler
+	monitorHandler monitor.Handler
+	//e2ControlHandler  e2control.Handler
+	e2PolicyHandler   e2policy.Handler
 	controllerHandler controller.Handler
 }
 

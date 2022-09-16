@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -54,14 +55,17 @@ type Store interface {
 	// Print prints the map in this store for debugging
 	Print()
 
-	// PutInnerMap puts inner key and its value into the inner map
-	PutInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error
+	// PutInnerMapElem puts inner key and its value into the inner map
+	PutInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error
 
-	// GetInnerMap gets inner element with inner key
-	GetInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error)
+	// PutInnerMapElems puts multiple OCNs into the inner map
+	PutInnerMapElems(ctx context.Context, key storage.IDs, ocns map[storage.IDs]meastype.QOffsetRange) error
 
-	// UpdateInnerMap gets inner element with inner key
-	UpdateInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error
+	// GetInnerMapElem gets inner element with inner key
+	GetInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error)
+
+	// UpdateInnerMapElem gets inner element with inner key
+	UpdateInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error
 
 	// ListAllInnerElement gets all inner element in this store
 	ListAllInnerElement(ctx context.Context, ch chan<- Entry) error
@@ -177,7 +181,7 @@ func (s *store) Print() {
 	}
 }
 
-func (s *store) PutInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
+func (s *store) PutInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[key]; !ok {
@@ -187,7 +191,20 @@ func (s *store) PutInnerMap(ctx context.Context, key storage.IDs, innerKey stora
 	return nil
 }
 
-func (s *store) GetInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error) {
+func (s *store) PutInnerMapElems(ctx context.Context, key storage.IDs, ocns map[storage.IDs]meastype.QOffsetRange) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// verify if there is a key
+	if _, ok := s.storage[key]; !ok {
+		return errors.NewNotFound("inner map does not exist")
+	}
+	for k, v := range ocns {
+		s.storage[key].Value[k] = v
+	}
+	return nil
+}
+
+func (s *store) GetInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if _, ok := s.storage[key].Value[innerKey]; !ok {
@@ -196,7 +213,7 @@ func (s *store) GetInnerMap(ctx context.Context, key storage.IDs, innerKey stora
 	return s.storage[key].Value[innerKey], nil
 }
 
-func (s *store) UpdateInnerMap(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
+func (s *store) UpdateInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[key]; !ok {

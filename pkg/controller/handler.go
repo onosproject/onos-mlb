@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -6,12 +7,12 @@ package controller
 
 import (
 	"context"
+	"github.com/onosproject/onos-mlb/pkg/southbound/e2policy"
 	"time"
 
 	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
-	"github.com/onosproject/onos-mlb/pkg/southbound/e2control"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"
 	paramstorage "github.com/onosproject/onos-mlb/pkg/store/parameters"
 	"github.com/onosproject/onos-mlb/pkg/store/storage"
@@ -26,14 +27,14 @@ const (
 )
 
 // NewHandler generates new MLB controller handler
-func NewHandler(e2controlHandler e2control.Handler,
+func NewHandler(e2policyHandler e2policy.Handler,
 	monitorHandler monitor.Handler,
 	numUEsMeasStore storage.Store,
 	neighborMeasStore storage.Store,
 	ocnStore ocnstorage.Store,
 	paramStore paramstorage.Store) Handler {
 	return &handler{
-		e2controlHandler:  e2controlHandler,
+		e2PolicyHandler:   e2policyHandler,
 		monitorHandler:    monitorHandler,
 		numUEsMeasStore:   numUEsMeasStore,
 		neighborMeasStore: neighborMeasStore,
@@ -49,7 +50,7 @@ type Handler interface {
 }
 
 type handler struct {
-	e2controlHandler  e2control.Handler
+	e2PolicyHandler   e2policy.Handler
 	monitorHandler    monitor.Handler
 	numUEsMeasStore   storage.Store
 	neighborMeasStore storage.Store
@@ -141,7 +142,7 @@ func (h *handler) updateOcnStore(ctx context.Context) error {
 				return err
 			}
 			for _, nIDs := range neighborList {
-				err = h.ocnStore.PutInnerMap(ctx, ids, nIDs, RcPreRanParamDefaultOCN)
+				err = h.ocnStore.PutInnerMapElem(ctx, ids, nIDs, RcPreRanParamDefaultOCN)
 				if err != nil {
 					close(ch)
 					return err
@@ -169,8 +170,8 @@ func (h *handler) updateOcnStore(ctx context.Context) error {
 
 			// add new neighbor
 			for _, n := range neighborList {
-				if _, err = h.ocnStore.GetInnerMap(ctx, ids, n); err != nil {
-					err = h.ocnStore.PutInnerMap(ctx, ids, n, RcPreRanParamDefaultOCN)
+				if _, err = h.ocnStore.GetInnerMapElem(ctx, ids, n); err != nil {
+					err = h.ocnStore.PutInnerMapElem(ctx, ids, n, RcPreRanParamDefaultOCN)
 					if err != nil {
 						return err
 					}
@@ -255,9 +256,10 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 	capSCell := h.getCapacity(1, totalNumUEs, numUEsSCell)
 	log.Debugf("Serving cell (%v) capacity: %v, load: %v / neighbor: %v / overload threshold %v, target threshold %v", ids, capSCell, 100-capSCell, cells, overloadThreshold, targetThreshold)
 	if 100-capSCell < targetThreshold && 100-capSCell < overloadThreshold {
+		tmpOcns := make(map[storage.IDs]meastype.QOffsetRange)
 		// send control message to reduce OCn for all neighbors
 		for _, nCellID := range neighborList {
-			ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
+			ocn, err := h.ocnStore.GetInnerMapElem(ctx, ids, nCellID)
 			if err != nil {
 				return err
 			}
@@ -267,22 +269,30 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 				ocn = ocn - meastype.QOffsetRange(ocnDeltaFactor)
 			}
 
-			err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
-			if err != nil {
-				return err
-			}
-			err = h.ocnStore.PutInnerMap(ctx, ids, nCellID, ocn)
-			if err != nil {
-				return err
-			}
+			tmpOcns[nCellID] = ocn
 		}
+		err = h.e2PolicyHandler.SetPolicyForOcn(ctx, ids.NodeID, tmpOcns)
+		if err != nil {
+			return err
+		}
+		err = h.ocnStore.PutInnerMapElems(ctx, ids, tmpOcns)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 
 	// if sCell load > overload threshold && nCell < target load threshold
 	// increase Ocn
 	if 100-capSCell > overloadThreshold {
+		tmpOcns := make(map[storage.IDs]meastype.QOffsetRange)
 		for _, nCellID := range neighborList {
+			ocn, err := h.ocnStore.GetInnerMapElem(ctx, ids, nCellID)
+			if err != nil {
+				return err
+			}
+			tmpOcns[nCellID] = ocn
 			numUEsNCell, err := h.numUE(ctx, nCellID.PlmnID, nCellID.CellID, cells)
 			if err != nil {
 				log.Warnf("there is no num(UEs) measurement value; this neighbor (plmnid-%v:cid-%v) may not be controlled by this xAPP; set num(UEs) to 0", nCellID.PlmnID, nCellID.CellID)
@@ -290,24 +300,20 @@ func (h *handler) controlLogicEachCell(ctx context.Context, ids storage.IDs, cel
 			capNCell := h.getCapacity(1, totalNumUEs, numUEsNCell)
 			log.Debugf("Serving cell (%v)'s neighbor cell (%v) capacity: %v, load: %v / overload threshold %v, target threshold %v", ids, nCellID, capNCell, 100-capNCell, overloadThreshold, targetThreshold)
 			if 100-capNCell < targetThreshold {
-				ocn, err := h.ocnStore.GetInnerMap(ctx, ids, nCellID)
-				if err != nil {
-					return err
-				}
-				if ocn+meastype.QOffsetRange(ocnDeltaFactor) > meastype.QOffset24dB {
-					ocn = meastype.QOffset24dB
+				if tmpOcns[nCellID]+meastype.QOffsetRange(ocnDeltaFactor) > meastype.QOffset24dB {
+					tmpOcns[nCellID] = meastype.QOffset24dB
 				} else {
-					ocn = ocn + meastype.QOffsetRange(ocnDeltaFactor)
-				}
-				err = h.e2controlHandler.SendControlMessage(ctx, nCellID, ids.NodeID, int32(ocn))
-				if err != nil {
-					return err
-				}
-				err = h.ocnStore.PutInnerMap(ctx, ids, nCellID, ocn)
-				if err != nil {
-					return err
+					tmpOcns[nCellID] = tmpOcns[nCellID] + meastype.QOffsetRange(ocnDeltaFactor)
 				}
 			}
+		}
+		err = h.e2PolicyHandler.SetPolicyForOcn(ctx, ids.NodeID, tmpOcns)
+		if err != nil {
+			return err
+		}
+		err = h.ocnStore.PutInnerMapElems(ctx, ids, tmpOcns)
+		if err != nil {
+			return err
 		}
 	}
 
