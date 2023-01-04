@@ -6,7 +6,7 @@ package paramstorage
 
 import (
 	"context"
-	"github.com/atomix/go-client/pkg/client/errors"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"sync"
 )
 

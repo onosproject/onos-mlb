@@ -10,7 +10,7 @@ import (
 	"github.com/onosproject/onos-mlb/pkg/southbound/e2policy"
 	"time"
 
-	"github.com/atomix/go-client/pkg/client/errors"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-mlb/pkg/monitor"
 	ocnstorage "github.com/onosproject/onos-mlb/pkg/store/ocn"

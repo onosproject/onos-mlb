@@ -6,8 +6,8 @@ package idutils
 
 import (
 	"fmt"
-	"github.com/atomix/go-client/pkg/client/errors"
 	"github.com/onosproject/onos-api/go/onos/uenib"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"strings"
 )
 
