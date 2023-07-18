@@ -34,14 +34,14 @@ type store struct {
 	mu      sync.RWMutex
 }
 
-func (s *store) Put(ctx context.Context, key string, value int) error {
+func (s *store) Put(_ context.Context, key string, value int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.storage[key] = value
 	return nil
 }
 
-func (s *store) Get(ctx context.Context, key string) (int, error) {
+func (s *store) Get(_ context.Context, key string) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if _, ok := s.storage[key]; !ok {
@@ -50,7 +50,7 @@ func (s *store) Get(ctx context.Context, key string) (int, error) {
 	return s.storage[key], nil
 }
 
-func (s *store) Update(ctx context.Context, key string, value int) error {
+func (s *store) Update(_ context.Context, key string, value int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.storage[key] = value

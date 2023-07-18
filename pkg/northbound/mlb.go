@@ -61,7 +61,7 @@ type Server struct {
 }
 
 // GetMlbParams gets mlb parameters
-func (s *Server) GetMlbParams(ctx context.Context, request *mlbapi.GetMlbParamRequest) (*mlbapi.GetMlbParamResponse, error) {
+func (s *Server) GetMlbParams(ctx context.Context, _ *mlbapi.GetMlbParamRequest) (*mlbapi.GetMlbParamResponse, error) {
 
 	interval, err := s.paramStore.Get(ctx, "interval")
 	if err != nil {
@@ -123,7 +123,7 @@ func (s *Server) SetMlbParams(ctx context.Context, request *mlbapi.SetMlbParamRe
 }
 
 // GetOcn gets Ocn map
-func (s *Server) GetOcn(ctx context.Context, request *mlbapi.GetOcnRequest) (*mlbapi.GetOcnResponse, error) {
+func (s *Server) GetOcn(ctx context.Context, _ *mlbapi.GetOcnRequest) (*mlbapi.GetOcnResponse, error) {
 	ch := make(chan ocnstorage.Entry)
 	go func(ch chan ocnstorage.Entry) {
 		err := s.ocnStore.ListAllInnerElement(ctx, ch)

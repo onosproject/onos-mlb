@@ -83,7 +83,7 @@ type store struct {
 	watchers *watcher.Watchers
 }
 
-func (s *store) Put(ctx context.Context, key storage.IDs, value *OcnMap) (*OcnMap, error) {
+func (s *store) Put(_ context.Context, key storage.IDs, value *OcnMap) (*OcnMap, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.storage[key] = value
@@ -95,7 +95,7 @@ func (s *store) Put(ctx context.Context, key storage.IDs, value *OcnMap) (*OcnMa
 	return value, nil
 }
 
-func (s *store) Get(ctx context.Context, key storage.IDs) (*OcnMap, error) {
+func (s *store) Get(_ context.Context, key storage.IDs) (*OcnMap, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if v, ok := s.storage[key]; ok {
@@ -104,7 +104,7 @@ func (s *store) Get(ctx context.Context, key storage.IDs) (*OcnMap, error) {
 	return nil, errors.New(errors.NotFound, "the storage entry does not exist")
 }
 
-func (s *store) ListElements(ctx context.Context, ch chan<- *OcnMap) error {
+func (s *store) ListElements(_ context.Context, ch chan<- *OcnMap) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(s.storage) == 0 {
@@ -118,7 +118,7 @@ func (s *store) ListElements(ctx context.Context, ch chan<- *OcnMap) error {
 	return nil
 }
 
-func (s *store) ListKeys(ctx context.Context, ch chan<- storage.IDs) error {
+func (s *store) ListKeys(_ context.Context, ch chan<- storage.IDs) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(s.storage) == 0 {
@@ -132,7 +132,7 @@ func (s *store) ListKeys(ctx context.Context, ch chan<- storage.IDs) error {
 	return nil
 }
 
-func (s *store) Update(ctx context.Context, entry *OcnMap, key storage.IDs) error {
+func (s *store) Update(_ context.Context, entry *OcnMap, key storage.IDs) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[key]; ok {
@@ -147,7 +147,7 @@ func (s *store) Update(ctx context.Context, entry *OcnMap, key storage.IDs) erro
 	return errors.New(errors.NotFound, "no storage entry does not exist; put the entry first")
 }
 
-func (s *store) Delete(ctx context.Context, key storage.IDs) error {
+func (s *store) Delete(_ context.Context, key storage.IDs) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storage, key)
@@ -181,7 +181,7 @@ func (s *store) Print() {
 	}
 }
 
-func (s *store) PutInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
+func (s *store) PutInnerMapElem(_ context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[key]; !ok {
@@ -191,7 +191,7 @@ func (s *store) PutInnerMapElem(ctx context.Context, key storage.IDs, innerKey s
 	return nil
 }
 
-func (s *store) PutInnerMapElems(ctx context.Context, key storage.IDs, ocns map[storage.IDs]meastype.QOffsetRange) error {
+func (s *store) PutInnerMapElems(_ context.Context, key storage.IDs, ocns map[storage.IDs]meastype.QOffsetRange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// verify if there is a key
@@ -204,7 +204,7 @@ func (s *store) PutInnerMapElems(ctx context.Context, key storage.IDs, ocns map[
 	return nil
 }
 
-func (s *store) GetInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error) {
+func (s *store) GetInnerMapElem(_ context.Context, key storage.IDs, innerKey storage.IDs) (meastype.QOffsetRange, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if _, ok := s.storage[key].Value[innerKey]; !ok {
@@ -213,7 +213,7 @@ func (s *store) GetInnerMapElem(ctx context.Context, key storage.IDs, innerKey s
 	return s.storage[key].Value[innerKey], nil
 }
 
-func (s *store) UpdateInnerMapElem(ctx context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
+func (s *store) UpdateInnerMapElem(_ context.Context, key storage.IDs, innerKey storage.IDs, value meastype.QOffsetRange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[key]; !ok {
@@ -223,7 +223,7 @@ func (s *store) UpdateInnerMapElem(ctx context.Context, key storage.IDs, innerKe
 	return nil
 }
 
-func (s *store) ListAllInnerElement(ctx context.Context, ch chan<- Entry) error {
+func (s *store) ListAllInnerElement(_ context.Context, ch chan<- Entry) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(s.storage) == 0 {
@@ -248,7 +248,7 @@ func (s *store) ListAllInnerElement(ctx context.Context, ch chan<- Entry) error 
 	return nil
 }
 
-func (s *store) ListInnerElement(ctx context.Context, key storage.IDs, ch chan<- InnerEntry) error {
+func (s *store) ListInnerElement(_ context.Context, key storage.IDs, ch chan<- InnerEntry) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if _, ok := s.storage[key]; !ok {
@@ -264,7 +264,7 @@ func (s *store) ListInnerElement(ctx context.Context, key storage.IDs, ch chan<-
 	return nil
 }
 
-func (s *store) DeleteInnerElement(ctx context.Context, key storage.IDs, innerKey storage.IDs) error {
+func (s *store) DeleteInnerElement(_ context.Context, key storage.IDs, innerKey storage.IDs) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storage[key].Value, innerKey)

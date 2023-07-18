@@ -61,7 +61,7 @@ type store struct {
 	watchers *watcher.Watchers
 }
 
-func (s *store) Put(ctx context.Context, key IDs, value interface{}) (*Entry, error) {
+func (s *store) Put(_ context.Context, key IDs, value interface{}) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	entry := &Entry{
@@ -77,7 +77,7 @@ func (s *store) Put(ctx context.Context, key IDs, value interface{}) (*Entry, er
 	return entry, nil
 }
 
-func (s *store) Get(ctx context.Context, key IDs) (*Entry, error) {
+func (s *store) Get(_ context.Context, key IDs) (*Entry, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if v, ok := s.storage[key]; ok {
@@ -86,7 +86,7 @@ func (s *store) Get(ctx context.Context, key IDs) (*Entry, error) {
 	return nil, errors.New(errors.NotFound, "the storage entry does not exist")
 }
 
-func (s *store) ListElements(ctx context.Context, ch chan<- *Entry) error {
+func (s *store) ListElements(_ context.Context, ch chan<- *Entry) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(s.storage) == 0 {
@@ -100,7 +100,7 @@ func (s *store) ListElements(ctx context.Context, ch chan<- *Entry) error {
 	return nil
 }
 
-func (s *store) ListKeys(ctx context.Context, ch chan<- IDs) error {
+func (s *store) ListKeys(_ context.Context, ch chan<- IDs) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(s.storage) == 0 {
@@ -114,7 +114,7 @@ func (s *store) ListKeys(ctx context.Context, ch chan<- IDs) error {
 	return nil
 }
 
-func (s *store) Update(ctx context.Context, entry *Entry) error {
+func (s *store) Update(_ context.Context, entry *Entry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.storage[entry.Key]; ok {
@@ -129,7 +129,7 @@ func (s *store) Update(ctx context.Context, entry *Entry) error {
 	return errors.New(errors.NotFound, "no storage entry does not exist; put the entry first")
 }
 
-func (s *store) Delete(ctx context.Context, key IDs) error {
+func (s *store) Delete(_ context.Context, key IDs) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storage, key)
