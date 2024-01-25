@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - GHA-integration
   pull_request:
 
 jobs:
@@ -18,7 +19,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Build
         run: |
-          GOPRIVATE="github.com/onosproject/*" go build -o build/_output/onos-mlb ./cmd/onos-mlb
+          go build -o build/_output/onos-mlb ./cmd/onos-mlb
 
   lint:
     runs-on: ubuntu-latest
