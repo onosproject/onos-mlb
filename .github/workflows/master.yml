@@ -17,8 +17,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Build
-        run: |
-          go build -o build/_output/onos-mlb ./cmd/onos-mlb
+        run: go build -o build/_output/onos-mlb ./cmd/onos-mlb
 
   lint:
     runs-on: ubuntu-latest
