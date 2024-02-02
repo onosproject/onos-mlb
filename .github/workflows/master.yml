@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - master
-      - GHA-integration
   pull_request:
 
 jobs:
@@ -69,7 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+ 
       - name: FOSSA scan
-        uses: fossas/fossa-action@v1.3.1
+        uses: fossas/fossa-action@main
         with:
           api-key: ${{secrets.fossaApiKey}}
