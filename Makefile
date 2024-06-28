@@ -12,7 +12,7 @@ ONOS_BUILD_VERSION := v0.6.6
 ONOS_PROTOC_VERSION := v0.6.6
 BUF_VERSION := 0.27.1
 
-all: build images
+all: build docker-build
 
 build: # @HELP build the Go binaries and run all validations (default)
 build:
