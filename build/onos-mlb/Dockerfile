@@ -14,7 +14,7 @@ COPY cmd/ /go/src/github.com/onosproject/onos-mlb/cmd/
 COPY pkg/ /go/src/github.com/onosproject/onos-mlb/pkg/
 COPY vendor/ /go/src/github.com/onosproject/onos-mlb/vendor/
 COPY api/ /go/src/github.com/onosproject/onos-mlb/api
-COPY build/build-tools /go/src/github.com/onosproject/onos-mlb/build/build-tools/
+COPY build/ /go/src/github.com/onosproject/onos-mlb/build/
 
 RUN cd /go/src/github.com/onosproject/onos-mlb && GOFLAGS=-mod=vendor make ${ONOS_MAKE_TARGET}
 
