@@ -13,7 +13,7 @@ require (
 	github.com/onosproject/onos-test v0.6.5
 	github.com/onosproject/rrm-son-lib v0.0.5
 	github.com/prometheus/common v0.26.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.28.1
 )
