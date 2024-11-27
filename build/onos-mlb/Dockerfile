@@ -18,7 +18,7 @@ COPY build/ /go/src/github.com/onosproject/onos-mlb/build/
 
 RUN cd /go/src/github.com/onosproject/onos-mlb && GOFLAGS=-mod=vendor make ${ONOS_MAKE_TARGET}
 
-FROM frolvlad/alpine-glibc:alpine-3.12
+FROM frolvlad/alpine-glibc:alpine-3.20
 
 USER nobody
 
